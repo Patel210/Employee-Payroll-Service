@@ -3,6 +3,7 @@ package com.capgemini.payrollservicetest;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -34,4 +35,10 @@ public class EmployeePayrollServiceTest {
 		assertEquals(3, employeePayrollService.employeeDataSize());
 	}
 
+	@Test
+	public void givenEmployeePayrollDB_WhenRetrieved_ShouldMatchTotalEntries() {
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		assertEquals(3, employeePayrollService.employeeDataSize());
+	}
 }
