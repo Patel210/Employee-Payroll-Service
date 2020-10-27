@@ -26,7 +26,7 @@ public class EmployeePayrollService {
 	}
 
 	/**
-	 * Reads from console
+	 * Reads from console, file, and DB
 	 * @throws DatabaseException 
 	 */
 	public ArrayList<EmployeePayrollData> readEmployeeData(IOService ioService) {
@@ -64,6 +64,39 @@ public class EmployeePayrollService {
 			new EmployeePayrollFileIOService().writeData(employeePayrollDataList);
 		}
 
+	}
+	
+	/**
+	 * @param name
+	 * @param salary
+	 * @throws DatabaseException
+	 * To Update Employee Salary
+	 */
+	public void updateEmployeeSalary(String name, double salary) throws DatabaseException {
+		int result = new EmployeePayrollDBService().updateEmployeeSalary(name, salary);
+		EmployeePayrollData employeePayrollData = getEmployeeData(name);
+		if(employeePayrollData != null) employeePayrollData.setSalary(salary);
+	}
+	
+	/**
+	 * @param name
+	 * @return T/F whether Payroll is in sync with DB or not
+	 * @throws DatabaseException
+	 */
+	public boolean isEmployeePayrollInSyncWithDB(String name) throws DatabaseException {
+		ArrayList<EmployeePayrollData> list = new EmployeePayrollDBService().getEmployeeData(name);
+		return list.get(0).equals(getEmployeeData(name));
+	}
+
+	/**
+	 * @param name
+	 * @returns Employee Payroll Data Object with given employee name
+	 */
+	private EmployeePayrollData getEmployeeData(String name) {
+		return employeePayrollDataList.stream()
+									  .filter(employeePayrollData -> employeePayrollData.getEmpName().equals(name))
+									  .findFirst()
+									  .orElse(null);
 	}
 
 	/**

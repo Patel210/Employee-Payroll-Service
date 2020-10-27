@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import com.capgemini.exceptions.DatabaseException;
 import com.capgemini.exceptions.DatabaseException.ExceptionType;
@@ -14,6 +15,11 @@ import com.capgemini.payrolldata.EmployeePayrollData;
 
 public class EmployeePayrollDBService {
 
+	/**
+	 * @return
+	 * @throws DatabaseException
+	 * Returns employee data from the DB
+	 */
 	public ArrayList<EmployeePayrollData> readEmployeeData() throws DatabaseException {
 		ArrayList<EmployeePayrollData> list = new ArrayList<EmployeePayrollData>();
 		String query = "SELECT * FROM employee_payroll";
@@ -34,6 +40,11 @@ public class EmployeePayrollDBService {
 		}
 	}
 
+	/**
+	 * @returns Connection Object
+	 * @throws DatabaseException
+	 * 
+	 */
 	private Connection getConnection() throws DatabaseException {
 		String jdbcURL = "jdbc:mysql://localhost:3306/employee_payroll_service";
 		String user = "root";
@@ -46,6 +57,33 @@ public class EmployeePayrollDBService {
 			throw new DatabaseException("Unable to connect to the database", ExceptionType.UNABLE_TO_CONNECT);
 		}
 		return connection;
+	}
+
+	/**
+	 * @param name
+	 * @param salary
+	 * @return execute update output
+	 * @throws DatabaseException
+	 */
+	public int updateEmployeeSalary(String name, double salary) throws DatabaseException {
+		String query = String.format("update employee_payroll set salary = %.2f where name = '%s'", salary, name);
+		try (Connection connection = getConnection();) {
+			Statement statement = connection.createStatement();
+			return statement.executeUpdate(query);
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
+
+	/**
+	 * @param name
+	 * @return list of employee data with given name
+	 * @throws DatabaseException
+	 */
+	public ArrayList<EmployeePayrollData> getEmployeeData(String name) throws DatabaseException {
+		return readEmployeeData().stream()
+								 .filter(employeePayrollData -> employeePayrollData.getEmpName().equals(name))
+								 .collect(Collectors.toCollection(ArrayList::new));
 	}
 
 }
