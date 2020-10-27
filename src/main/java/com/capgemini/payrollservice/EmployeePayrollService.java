@@ -3,10 +3,13 @@ package com.capgemini.payrollservice;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import com.capgemini.databaseservice.EmployeePayrollDBService;
+import com.capgemini.exceptions.DatabaseException;
 import com.capgemini.fileioservice.EmployeePayrollFileIOService;
 import com.capgemini.payrolldata.EmployeePayrollData;
 
 public class EmployeePayrollService {
+	
 	public enum IOService {
 		CONSOLE_IO, FILE_IO, DB_IO, REST_IO
 	}
@@ -24,21 +27,31 @@ public class EmployeePayrollService {
 
 	/**
 	 * Reads from console
+	 * @throws DatabaseException 
 	 */
-	public void readEmployeeData(IOService ioService) {
+	public ArrayList<EmployeePayrollData> readEmployeeData(IOService ioService) {
 		if (ioService.equals(IOService.CONSOLE_IO)) {
 			Scanner sc = new Scanner(System.in);
 			System.out.println("Enter the employee data\n\nEnter Employee name: ");
 			String empName = sc.next();
 			System.out.println("Enter the employee id:");
-			long empId = sc.nextLong();
+			int empId = sc.nextInt();
 			System.out.println("Enter the employee salary:");
-			long salary = sc.nextLong();
+			double salary = sc.nextDouble();
 			employeePayrollDataList.add(new EmployeePayrollData(empId, empName, salary));
 			sc.close();
-		} else if (ioService.equals(IOService.FILE_IO)) {
+		} 
+		if (ioService.equals(IOService.FILE_IO)) {
 			this.employeePayrollDataList = new EmployeePayrollFileIOService().readEmployeePayrollData();
 		}
+		if(ioService.equals(IOService.DB_IO)) {
+			try {
+				this.employeePayrollDataList = new EmployeePayrollDBService().readEmployeeData();
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+		return employeePayrollDataList;
 	}
 
 	/**

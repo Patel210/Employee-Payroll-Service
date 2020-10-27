@@ -62,7 +62,7 @@ public class EmployeePayrollFileIOService {
 			Files.lines(Paths.get(PAYROLL_FILE_NAME)).forEach(line -> {
 				line = line.trim();
 				String[] empData = line.split("[\\s]{0,}[a-zA-Z]+[:][\\s]");
-				employeePayrollDataList.add(new EmployeePayrollData(Long.parseLong(empData[1]), empData[2], Long.parseLong(empData[3])));
+				employeePayrollDataList.add(new EmployeePayrollData(Integer.parseInt(empData[1]), empData[2], Double.parseDouble(empData[3])));
 			});
 		}catch(IOException e) {
 			e.printStackTrace();

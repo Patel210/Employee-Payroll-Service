@@ -1,14 +1,23 @@
 package com.capgemini.payrolldata;
 
-public class EmployeePayrollData {
-	private long empId;
-	private String empName;
-	private long salary;
+import java.time.LocalDate;
 
-	public EmployeePayrollData(long empId, String empName, long salary) {
+public class EmployeePayrollData {
+
+	private int empId;
+	private String empName;
+	private double salary;
+	private LocalDate startDate;
+
+	public EmployeePayrollData(int empId, String empName, double salary) {
 		this.empName = empName;
 		this.empId = empId;
 		this.salary = salary;
+	}
+
+	public EmployeePayrollData(int id, String name, double salary, LocalDate startDate) {
+		this(id, name, salary);
+		this.startDate = startDate;
 	}
 
 	@Override
@@ -28,16 +37,26 @@ public class EmployeePayrollData {
 		return empId;
 	}
 
-	public void setEmpId(long empId) {
+	public void setEmpId(int empId) {
 		this.empId = empId;
 	}
 
-	public long getSalary() {
+	public double getSalary() {
 		return salary;
 	}
 
-	public void setSalary(long salary) {
+	public void setSalary(double salary) {
 		this.salary = salary;
 	}
-
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null || getClass() != obj.getClass())
+			return false;
+		EmployeePayrollData other = (EmployeePayrollData) obj;
+		
+		return empId == other.empId && empName.equals(other.empName) && Double.compare(salary, other.salary) == 0;
+	}
 }
