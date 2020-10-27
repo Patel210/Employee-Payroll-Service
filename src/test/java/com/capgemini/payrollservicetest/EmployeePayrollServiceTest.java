@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.capgemini.exceptions.DatabaseException;
 import com.capgemini.payrolldata.EmployeePayrollData;
 import com.capgemini.payrollservice.EmployeePayrollService;
 import com.capgemini.payrollservice.EmployeePayrollService.IOService;
@@ -40,5 +41,16 @@ public class EmployeePayrollServiceTest {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		assertEquals(3, employeePayrollService.employeeDataSize());
+	}
+	
+	@Test
+	public void givenNewSalaryForEmployee_WhenUpdated_ShouldUpdateInTheDatabaseRecord() {
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		try {
+			employeePayrollService.updateEmployeeSalary("Terisa", 3000000.0);
+			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB("Terisa");
+			assertTrue(result);
+		} catch (DatabaseException e) {}
 	}
 }
