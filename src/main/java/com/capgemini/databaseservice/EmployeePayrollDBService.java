@@ -9,6 +9,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.capgemini.exceptions.DatabaseException;
 import com.capgemini.exceptions.DatabaseException.ExceptionType;
@@ -36,7 +38,6 @@ public class EmployeePayrollDBService {
 	 * Returns employee data from the DB
 	 */
 	public ArrayList<EmployeePayrollData> readEmployeeData() throws DatabaseException {
-		ArrayList<EmployeePayrollData> list = new ArrayList<EmployeePayrollData>();
 		String query = "SELECT * FROM employee_payroll";
 		return getEmployeePayrollData(query);
 	}
@@ -72,6 +73,26 @@ public class EmployeePayrollDBService {
 										Date.valueOf(startDate), Date.valueOf(endDate));
 		
 		return getEmployeePayrollData(query);
+	}
+	
+
+	/**
+	 * @return sum of salaries against gender
+	 * @throws DatabaseException
+	 */
+	public Map<String, Double> getSumOfSalariesByGender() throws DatabaseException {
+		String query = "SELECT gender, SUM(salary) as sum_salary FROM employee_payroll GROUP BY gender";
+		Map<String, Double> genderToSumOfSalaryMap = new HashMap<String, Double>();
+		try(Connection connection = getConnection();){
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			while(result.next()) {
+				genderToSumOfSalaryMap.put(result.getString("gender"), result.getDouble("sum_salary"));
+			}
+			return genderToSumOfSalaryMap;
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
 	}
 
 	/**
