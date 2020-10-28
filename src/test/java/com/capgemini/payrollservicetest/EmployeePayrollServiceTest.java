@@ -102,6 +102,17 @@ public class EmployeePayrollServiceTest {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		Map<String, Integer> countByGender = employeePayrollService.readEmployeeCountByGender(IOService.DB_IO);
-		assertTrue(countByGender.get("M").equals(2) && countByGender.get("F").equals(1));
+		assertTrue(countByGender.get("M").equals(3) && countByGender.get("F").equals(1));
+	}
+	
+	@Test
+	public void givenNewEmployee_WhenAddedToDB_ShouldBeInSyncWithDB() {
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		try {
+			employeePayrollService.addEmployeetoPayroll("Mark", 4000000.0, 'M', LocalDate.now());
+			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB("Mark");
+			assertTrue(result);
+		} catch (DatabaseException e) {}
 	}
 }
