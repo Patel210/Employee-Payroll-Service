@@ -179,69 +179,15 @@ public class EmployeePayrollDBService {
 		try {
 			connection = getConnection();
 			connection.setAutoCommit(false);
-		} catch (SQLException e1) {
+		} catch (SQLException e) {
 			throw new DatabaseException("Error while setting Auto Commit", ExceptionType.AUTO_COMMIT_ERROR);
 		}
 		
-		try(Statement statement = connection.createStatement();){
-			String query = String.format("INSERT INTO employee_payroll (company_name, name, gender, salary, start) "+
-										  "VALUES ('%s', '%s', '%s', '%s', '%s');", 
-										 companyName, name, gender, salary, Date.valueOf(startDate));
-			int rowAffected = statement.executeUpdate(query, statement.RETURN_GENERATED_KEYS);
-			empId = -1;
-			if(rowAffected == 1) {
-				ResultSet result = statement.getGeneratedKeys();
-				if(result.next()) {
-						empId = result.getInt(1);
-				}
-			}
-		} catch (SQLException e) {
-			try {
-				connection.rollback();
-			} catch (SQLException ex) {
-				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
-			}
-			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
-		}
-		
-		try(Statement statement = connection.createStatement();){
-			double deductions = salary * 0.2;
-			double tax = (salary - deductions) * 0.1; 
-			String query = String.format("INSERT INTO payroll_details (employee_id, basic_pay, deductions, tax)"
-											+ "VALUES ('%s', '%s', '%s', '%s')", empId, salary, deductions, tax);
-			statement.executeUpdate(query);
-		} catch (SQLException e) {
-			try {
-				connection.rollback();
-			} catch (SQLException ex) {
-				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
-			}
-			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
-		} 
-		
-		try(Statement statement = connection.createStatement();){
-			boolean flag = true;
-			for(String department:departments) {
-				int departmentId = getDepartmentId(department);
-				if(departmentId!=-1) {
-					String query = String.format("insert into employee_department (employee_id, department_id) "
-						+ "Values ('%s','%s')", empId, departmentId);
-					int rowAffected = statement.executeUpdate(query);
-					if(rowAffected != 1) {	
-						flag = false;
-					}
-				}
-			}
-			if(flag) {
-				employeePayrollData = new EmployeePayrollData(empId, name, salary, startDate, gender, companyName, departments);
-			}
-		} catch (SQLException e) {
-			try {
-				connection.rollback();
-			} catch (SQLException ex) {
-				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
-			}
-			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		empId = addToEmployeeTable(connection, name, salary, gender, startDate, companyName);
+		addToPayrollDetails(connection, empId, salary); 
+		boolean result = addToEmployeeDepartmentTable(connection, empId, departments);
+		if(result) {
+			employeePayrollData = new EmployeePayrollData(empId, name, salary, startDate, gender, companyName, departments);
 		}
 		
 		try {
@@ -361,6 +307,84 @@ public class EmployeePayrollDBService {
 			return departmentId;
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
+	
+
+	/**
+	 * Adds employee department details in employee department details
+	 */
+	private boolean addToEmployeeDepartmentTable(Connection connection, int empId, String[] departments) throws DatabaseException {
+		try(Statement statement = connection.createStatement();){
+			boolean flag = true;
+			for(String department:departments) {
+				int departmentId = getDepartmentId(department);
+				if(departmentId!=-1) {
+					String query = String.format("insert into employee_department (employee_id, department_id) "
+						+ "Values ('%s','%s')", empId, departmentId);
+					int rowAffected = statement.executeUpdate(query);
+					if(rowAffected != 1) {	
+						flag = false;
+					}
+				}
+			}
+			return flag;
+		} catch (SQLException e) {
+			try {
+				connection.rollback();
+			} catch (SQLException ex) {
+				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
+			}
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
+
+	/**
+	 * Adds Employee details to the employee table in DB
+	 */
+	private int addToEmployeeTable(Connection connection, String name, double salary, char gender, LocalDate startDate,
+			String companyName) throws DatabaseException {
+		int empId = -1;
+		try(Statement statement = connection.createStatement();){
+			String query = String.format("INSERT INTO employee_payroll (company_name, name, gender, salary, start) "+
+										  "VALUES ('%s', '%s', '%s', '%s', '%s');", 
+										 companyName, name, gender, salary, Date.valueOf(startDate));
+			int rowAffected = statement.executeUpdate(query, statement.RETURN_GENERATED_KEYS);
+			empId = -1;
+			if(rowAffected == 1) {
+				ResultSet result = statement.getGeneratedKeys();
+				if(result.next()) {
+						empId = result.getInt(1);
+				}
+			}
+			return empId;
+		} catch (SQLException e) {
+			try {
+				connection.rollback();
+			} catch (SQLException ex) {
+				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
+			}
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}	
+	}
+
+	/**
+	 * add employee's payroll details to payroll table
+	 */
+	private void addToPayrollDetails(Connection connection, int empId, double salary) throws DatabaseException {
+		try(Statement statement = connection.createStatement();){
+			double deductions = salary * 0.2;
+			double tax = (salary - deductions) * 0.1; 
+			String query = String.format("INSERT INTO payroll_details (employee_id, basic_pay, deductions, tax)"
+											+ "VALUES ('%s', '%s', '%s', '%s')", empId, salary, deductions, tax);
+			statement.executeUpdate(query);
+		} catch (SQLException e) {
+			try {
+				connection.rollback();
+			} catch (SQLException ex) {
+				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
+			}
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
 	}
