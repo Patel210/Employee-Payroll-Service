@@ -15,13 +15,15 @@ public class EmployeePayrollService {
 	}
 
 	private ArrayList<EmployeePayrollData> employeePayrollDataList;
+	private EmployeePayrollDBService employeePayrollDBService;
 
 	public EmployeePayrollService(ArrayList<EmployeePayrollData> employeePayrollDataList) {
-		super();
+		employeePayrollDBService = EmployeePayrollDBService.createInstance();
 		this.employeePayrollDataList = employeePayrollDataList;
 	}
 
 	public EmployeePayrollService() {
+		employeePayrollDBService = EmployeePayrollDBService.createInstance();
 		this.employeePayrollDataList = new ArrayList<EmployeePayrollData>();
 	}
 
@@ -46,7 +48,7 @@ public class EmployeePayrollService {
 		}
 		if(ioService.equals(IOService.DB_IO)) {
 			try {
-				this.employeePayrollDataList = new EmployeePayrollDBService().readEmployeeData();
+				this.employeePayrollDataList = employeePayrollDBService.readEmployeeData();
 			} catch (DatabaseException e) {
 				System.out.println(e.getMessage());
 			}
@@ -73,7 +75,7 @@ public class EmployeePayrollService {
 	 * To Update Employee Salary
 	 */
 	public void updateEmployeeSalary(String name, double salary) throws DatabaseException {
-		int result = new EmployeePayrollDBService().updateEmployeeSalaryUsingPreparedStatement(name, salary);
+		int result = employeePayrollDBService.updateEmployeeSalaryUsingPreparedStatement(name, salary);
 		if (result != 0) {
 			EmployeePayrollData employeePayrollData = getEmployeeData(name);
 			if(employeePayrollData != null) employeePayrollData.setSalary(salary);
@@ -86,7 +88,7 @@ public class EmployeePayrollService {
 	 * @throws DatabaseException
 	 */
 	public boolean isEmployeePayrollInSyncWithDB(String name) throws DatabaseException {
-		ArrayList<EmployeePayrollData> list = new EmployeePayrollDBService().getEmployeeData(name);
+		ArrayList<EmployeePayrollData> list = employeePayrollDBService.getEmployeeData(name);
 		return list.get(0).equals(getEmployeeData(name));
 	}
 
