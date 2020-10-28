@@ -90,6 +90,21 @@ public class EmployeePayrollService {
 		}
 		return null;
 	}
+	
+	/**
+	 * @param service
+	 * @return Map containing gender as key and sum of salaries as value
+	 */
+	public Map<String, Double> readAverageSalaryByGender(IOService service) {
+		if(service.equals(IOService.DB_IO)) {
+			try {
+				return employeePayrollDBService.getAvgSalaryByGender();
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+		return null;
+	}
 
 
 	/**

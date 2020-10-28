@@ -81,20 +81,19 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 */
 	public Map<String, Double> getSumOfSalariesByGender() throws DatabaseException {
-		String query = "SELECT gender, SUM(salary) as sum_salary FROM employee_payroll GROUP BY gender";
-		Map<String, Double> genderToSumOfSalaryMap = new HashMap<String, Double>();
-		try(Connection connection = getConnection();){
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
-			while(result.next()) {
-				genderToSumOfSalaryMap.put(result.getString("gender"), result.getDouble("sum_salary"));
-			}
-			return genderToSumOfSalaryMap;
-		} catch (SQLException e) {
-			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
-		}
+		String query = "SELECT gender, SUM(salary) as salary FROM employee_payroll GROUP BY gender";
+		return performOperationsOnsalaryByGender(query);
 	}
-
+	
+	/**
+	 * @return average salary by gender
+	 * @throws DatabaseException
+	 */
+	public Map<String, Double> getAvgSalaryByGender() throws DatabaseException {
+		String query = "SELECT gender, AVG(salary) as salary FROM employee_payroll GROUP BY gender";
+		return performOperationsOnsalaryByGender(query);
+	}
+	
 	/**
 	 * @param name
 	 * @param salary
@@ -193,6 +192,25 @@ public class EmployeePayrollDBService {
 			Statement statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(query);
 			return getEmployeePayrollData(resultSet);
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
+	
+	/**
+	 * @param query
+	 * Perform Database operation such as Sum, avg, min, max, count and return the result
+	 * @throws DatabaseException
+	 */
+	private Map<String, Double> performOperationsOnsalaryByGender(String query) throws DatabaseException {
+		Map<String, Double> map = new HashMap<String, Double>();
+		try(Connection connection = getConnection();){
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			while(result.next()) {
+				map.put(result.getString("gender"), result.getDouble("salary"));
+			}
+			return map;
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
