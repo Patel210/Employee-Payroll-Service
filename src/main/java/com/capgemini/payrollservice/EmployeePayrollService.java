@@ -135,6 +135,22 @@ public class EmployeePayrollService {
 		}
 		return null;
 	}
+	
+	/**
+	 * @param service
+	 * @return Map containing gender as key and employee count as value
+	 */
+	public Map<String, Integer> readEmployeeCountByGender(IOService service) {
+		if(service.equals(IOService.DB_IO)) {
+			try {
+				return employeePayrollDBService.getCountByGender();
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+		return null;
+	}
+
 
 	/**
 	 * Writes to file or consoles

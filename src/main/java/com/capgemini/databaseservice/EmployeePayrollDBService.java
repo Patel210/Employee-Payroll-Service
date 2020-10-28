@@ -104,9 +104,32 @@ public class EmployeePayrollDBService {
 		return performOperationsOnsalaryByGender(query);
 	}
 
+	/**
+	 * @return maximum salary by gender
+	 * @throws DatabaseException
+	 */
 	public Map<String, Double> getMaxSalaryByGender() throws DatabaseException {
 		String query = "SELECT gender, MAX(salary) as salary FROM employee_payroll GROUP BY gender";
 		return performOperationsOnsalaryByGender(query);
+	}
+	
+	/**
+	 * @return employee count by gender
+	 * @throws DatabaseException
+	 */
+	public Map<String, Integer> getCountByGender() throws DatabaseException {
+		String query = "SELECT gender, Count(salary) as count FROM employee_payroll GROUP BY gender";
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		try(Connection connection = getConnection();){
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			while(result.next()) {
+				map.put(result.getString("gender"), result.getInt("count"));
+			}
+			return map;
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
 	}
 
 	/**
