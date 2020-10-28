@@ -8,6 +8,7 @@ public class EmployeePayrollData {
 	private String empName;
 	private double salary;
 	private LocalDate startDate;
+	private char gender;
 
 	public EmployeePayrollData(int empId, String empName, double salary) {
 		this.empName = empName;
@@ -18,6 +19,11 @@ public class EmployeePayrollData {
 	public EmployeePayrollData(int id, String name, double salary, LocalDate startDate) {
 		this(id, name, salary);
 		this.startDate = startDate;
+	}
+	
+	public EmployeePayrollData(int id, String name, double salary, LocalDate startDate, char gender) {
+		this(id, name, salary, startDate);
+		this.gender = gender;
 	}
 
 	@Override
@@ -56,7 +62,7 @@ public class EmployeePayrollData {
 		if (obj == null || getClass() != obj.getClass())
 			return false;
 		EmployeePayrollData other = (EmployeePayrollData) obj;
-		
-		return empId == other.empId && empName.equals(other.empName) && Double.compare(salary, other.salary) == 0;
+		return empId == other.empId && empName.equals(other.empName) && Double.compare(salary, other.salary) == 0
+				&& startDate.isEqual(other.startDate) && gender == other.gender;
 	}
 }

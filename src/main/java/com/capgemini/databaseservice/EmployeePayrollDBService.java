@@ -167,6 +167,30 @@ public class EmployeePayrollDBService {
 	}
 	
 	/**
+	 *Adds Employee Payroll Data to data base
+	 */
+	public EmployeePayrollData addEmployeePayrollToDB(String name, double salary, char gender, LocalDate startDate) 
+													  throws DatabaseException {
+		String query = String.format("INSERT INTO employee_payroll (name, gender, salary, start) VALUES ('%s', '%s', '%s', '%s');", 
+										name, gender, salary, Date.valueOf(startDate));
+		try(Connection connection = getConnection()){
+			Statement statement = connection.createStatement();
+			int rowAffected = statement.executeUpdate(query, statement.RETURN_GENERATED_KEYS);
+			int empId = -1;
+			if(rowAffected == 1) {
+				ResultSet result = statement.getGeneratedKeys();
+				if(result.next()) {
+						empId = result.getInt(1);
+				}
+			}
+			EmployeePayrollData employeePayrollData = new EmployeePayrollData(empId, name, salary, startDate, gender);
+			return employeePayrollData;
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
+
+	/**
 	 * @returns Connection Object
 	 * @throws DatabaseException
 	 * 
@@ -198,7 +222,8 @@ public class EmployeePayrollDBService {
 				String name = result.getString("name");
 				Double salary = result.getDouble("salary");
 				LocalDate date = result.getDate("start").toLocalDate();
-				list.add(new EmployeePayrollData(id, name, salary, date));
+				String gender = result.getString("gender");
+				list.add(new EmployeePayrollData(id, name, salary, date, gender.charAt(0)));
 			}
 			return list;
 		} catch (SQLException e) {
