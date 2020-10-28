@@ -73,9 +73,11 @@ public class EmployeePayrollService {
 	 * To Update Employee Salary
 	 */
 	public void updateEmployeeSalary(String name, double salary) throws DatabaseException {
-		int result = new EmployeePayrollDBService().updateEmployeeSalary(name, salary);
-		EmployeePayrollData employeePayrollData = getEmployeeData(name);
-		if(employeePayrollData != null) employeePayrollData.setSalary(salary);
+		int result = new EmployeePayrollDBService().updateEmployeeSalaryUsingPreparedStatement(name, salary);
+		if (result != 0) {
+			EmployeePayrollData employeePayrollData = getEmployeeData(name);
+			if(employeePayrollData != null) employeePayrollData.setSalary(salary);
+		}
 	}
 	
 	/**
