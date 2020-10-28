@@ -88,14 +88,14 @@ public class EmployeePayrollServiceTest {
 		Map<String, Double> minSalaryByGender = employeePayrollService.readMinSalaryByGender(IOService.DB_IO);
 		assertTrue(minSalaryByGender.get("M").equals(1000000.00) && minSalaryByGender.get("F").equals(3000000.00));
 	}
-	
+	 
 	@Test
 	public void givenPayrollDB_WhenMaximumSalaryRetrievedByGender_ShouldReturnCorrectResult() {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		Map<String, Double> maxSalaryByGender = employeePayrollService.readMaxSalaryByGender(IOService.DB_IO);
 		assertTrue(maxSalaryByGender.get("M").equals(3000000.00) && maxSalaryByGender.get("F").equals(3000000.00));
-	}
+	} 
 	
 	@Test
 	public void givenPayrollDB_WhenEmployeeCountRetrievedByGender_ShouldReturnCorrectResult() {
@@ -104,7 +104,7 @@ public class EmployeePayrollServiceTest {
 		Map<String, Integer> countByGender = employeePayrollService.readEmployeeCountByGender(IOService.DB_IO);
 		assertTrue(countByGender.get("M").equals(3) && countByGender.get("F").equals(1));
 	}
-	
+	 
 	@Test
 	public void givenNewEmployee_WhenAddedToDB_ShouldBeInSyncWithDB() {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
@@ -114,5 +114,14 @@ public class EmployeePayrollServiceTest {
 			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB("Mark");
 			assertTrue(result);
 		} catch (DatabaseException e) {System.out.println(e.getMessage());}
+	}
+	
+	@Test
+	public void givenEmployee_WhenRemovedFromDB_ShouldReturnCorrectEmployeeCount() {
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		employeePayrollService.removeEmployeeFromDB(1);
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		assertEquals(3, employeePayrollService.employeeDataSize());
 	}
 }
