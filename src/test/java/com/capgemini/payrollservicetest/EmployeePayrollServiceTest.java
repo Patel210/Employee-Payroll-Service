@@ -72,4 +72,12 @@ public class EmployeePayrollServiceTest {
 		Map<String, Double> sumOfSalariesByGender = employeePayrollService.readSumOfSalariesByGender(IOService.DB_IO);
 		assertTrue(sumOfSalariesByGender.get("M").equals(4000000.00) && sumOfSalariesByGender.get("F").equals(3000000.00));
 	}
+	
+	@Test
+	public void givenPayrollDB_WhenAverageRetrievedByGender_ShouldReturnCorrectResult() {
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		Map<String, Double> avgSalaryByGender = employeePayrollService.readAverageSalaryByGender(IOService.DB_IO);
+		assertTrue(avgSalaryByGender.get("M").equals(2000000.00) && avgSalaryByGender.get("F").equals(3000000.00));
+	}
 }
