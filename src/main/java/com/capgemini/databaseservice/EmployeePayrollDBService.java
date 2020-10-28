@@ -104,7 +104,11 @@ public class EmployeePayrollDBService {
 		return performOperationsOnsalaryByGender(query);
 	}
 
-	
+	public Map<String, Double> getMaxSalaryByGender() throws DatabaseException {
+		String query = "SELECT gender, MAX(salary) as salary FROM employee_payroll GROUP BY gender";
+		return performOperationsOnsalaryByGender(query);
+	}
+
 	/**
 	 * @param name
 	 * @param salary

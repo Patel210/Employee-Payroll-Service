@@ -120,6 +120,21 @@ public class EmployeePayrollService {
 		}
 		return null;
 	}
+	
+	/**
+	 * @param service
+	 * @return Map containing gender as key and max as value
+	 */
+	public Map<String, Double> readMaxSalaryByGender(IOService service) {
+		if(service.equals(IOService.DB_IO)) {
+			try {
+				return employeePayrollDBService.getMaxSalaryByGender();
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * Writes to file or consoles
