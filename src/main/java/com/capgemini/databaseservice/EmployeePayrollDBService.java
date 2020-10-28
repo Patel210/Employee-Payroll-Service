@@ -169,7 +169,8 @@ public class EmployeePayrollDBService {
 	/**
 	 *Adds Employee Payroll Data to data base
 	 */
-	public EmployeePayrollData addEmployeePayrollToDB(String name, double salary, char gender, LocalDate startDate) 
+	public EmployeePayrollData addEmployeePayrollToDB(String name, double salary, char gender, LocalDate startDate,
+													  String companyName, String ... departments) 
 													  throws DatabaseException {
 		Connection connection = null;
 		int empId = -1;
@@ -183,8 +184,9 @@ public class EmployeePayrollDBService {
 		}
 		
 		try(Statement statement = connection.createStatement();){
-			String query = String.format("INSERT INTO employee_payroll (name, gender, salary, start) VALUES ('%s', '%s', '%s', '%s');", 
-					name, gender, salary, Date.valueOf(startDate));
+			String query = String.format("INSERT INTO employee_payroll (company_name, name, gender, salary, start) "+
+										  "VALUES ('%s', '%s', '%s', '%s', '%s');", 
+										 companyName, name, gender, salary, Date.valueOf(startDate));
 			int rowAffected = statement.executeUpdate(query, statement.RETURN_GENERATED_KEYS);
 			empId = -1;
 			if(rowAffected == 1) {
@@ -207,10 +209,7 @@ public class EmployeePayrollDBService {
 			double tax = (salary - deductions) * 0.1; 
 			String query = String.format("INSERT INTO payroll_details (employee_id, basic_pay, deductions, tax)"
 											+ "VALUES ('%s', '%s', '%s', '%s')", empId, salary, deductions, tax);
-			int rowAffected = statement.executeUpdate(query);
-			if(rowAffected == 1) {
-				employeePayrollData = new EmployeePayrollData(empId, name, salary, startDate, gender);
-			}
+			statement.executeUpdate(query);
 		} catch (SQLException e) {
 			try {
 				connection.rollback();
@@ -219,6 +218,31 @@ public class EmployeePayrollDBService {
 			}
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		} 
+		
+		try(Statement statement = connection.createStatement();){
+			boolean flag = true;
+			for(String department:departments) {
+				int departmentId = getDepartmentId(department);
+				if(departmentId!=-1) {
+					String query = String.format("insert into employee_department (employee_id, department_id) "
+						+ "Values ('%s','%s')", empId, departmentId);
+					int rowAffected = statement.executeUpdate(query);
+					if(rowAffected != 1) {	
+						flag = false;
+					}
+				}
+			}
+			if(flag) {
+				employeePayrollData = new EmployeePayrollData(empId, name, salary, startDate, gender, companyName, departments);
+			}
+		} catch (SQLException e) {
+			try {
+				connection.rollback();
+			} catch (SQLException ex) {
+				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
+			}
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
 		
 		try {
 			connection.commit();
@@ -321,6 +345,21 @@ public class EmployeePayrollDBService {
 			}
 			return map;
 		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
+	
+	private int getDepartmentId(String department) throws DatabaseException {
+		int departmentId = -1;
+		Connection connection = getConnection();
+		String query = "Select department_id from department where department_name = ?";
+		try(PreparedStatement statement = connection.prepareStatement(query);) {
+			statement.setString(1, department);
+			ResultSet result = statement.executeQuery();
+			while(result.next()) departmentId = result.getInt("department_id");
+			return departmentId;
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
 	}
