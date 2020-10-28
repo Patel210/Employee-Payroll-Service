@@ -2,8 +2,8 @@ package com.capgemini.payrollservicetest;
 
 import static org.junit.Assert.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.junit.Test;
 
@@ -52,5 +52,15 @@ public class EmployeePayrollServiceTest {
 			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB("Terisa");
 			assertTrue(result);
 		} catch (DatabaseException e) {}
+	}
+	
+	@Test
+	public void givenDateRange_WhenRetrievedFromDB_ShouldMatchTotalCount() {
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		LocalDate startDate = LocalDate.of(2018, 01, 01);
+		LocalDate endDate = LocalDate.now();
+		ArrayList<EmployeePayrollData> list = employeePayrollService.readEmployeePayrollDataForDateRange(IOService.DB_IO, startDate, endDate);
+		assertEquals(3, list.size());
 	}
 }
