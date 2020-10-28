@@ -23,16 +23,16 @@ public class EmployeePayrollData {
 		this.startDate = startDate;
 	}
 	
-	public EmployeePayrollData(int id, String name, double salary, LocalDate startDate, char gender) {
+	public EmployeePayrollData(int id, String companyName, String name, double salary, LocalDate startDate, char gender) {
 		this(id, name, salary, startDate);
+		this.companyName = companyName;
 		this.gender = gender;
 	}
 	
 	public EmployeePayrollData(int id, String name, double salary, LocalDate startDate, char gender,
 								String companyName, String[] departments) {
-		this(id, name, salary, startDate, gender);
+		this(id, companyName, name, salary, startDate, gender);
 		this.departments = departments;
-		this.companyName = companyName;
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public class EmployeePayrollData {
 		if (obj == null || getClass() != obj.getClass())
 			return false;
 		EmployeePayrollData other = (EmployeePayrollData) obj;
-		return empId == other.empId && empName.equals(other.empName) && Double.compare(salary, other.salary) == 0
+		return empId == other.empId  && companyName.equals(other.companyName) && empName.equals(other.empName) && Double.compare(salary, other.salary) == 0
 				&& startDate.isEqual(other.startDate) && gender == other.gender;
 	}
 }

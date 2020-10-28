@@ -289,11 +289,12 @@ public class EmployeePayrollDBService {
 		try {
 			while (result.next()) {
 				int id = result.getInt("id");
+				String companyName = result.getString("company_name");
 				String name = result.getString("name");
 				Double salary = result.getDouble("salary");
 				LocalDate date = result.getDate("start").toLocalDate();
 				String gender = result.getString("gender");
-				list.add(new EmployeePayrollData(id, name, salary, date, gender.charAt(0)));
+				list.add(new EmployeePayrollData(id, companyName, name, salary, date, gender.charAt(0)));
 			}
 			return list;
 		} catch (SQLException e) {

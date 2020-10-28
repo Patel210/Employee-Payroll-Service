@@ -112,7 +112,6 @@ public class EmployeePayrollServiceTest {
 		try {
 			employeePayrollService.addEmployeeToPayroll("Mark", 4000000.0, 'M', LocalDate.now(), "Capgemini", "Sales" , "Marketing");
 			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB("Mark");
-			System.out.println(result);
 			assertTrue(result);
 		} catch (DatabaseException e) {System.out.println(e.getMessage());}
 	}

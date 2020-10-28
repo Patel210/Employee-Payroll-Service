@@ -167,7 +167,8 @@ public class EmployeePayrollService {
 	/**
 	 * To add Employee Payroll Data to Database;
 	 */
-	public void addEmployeeToPayroll(String name, double salary, char gender, LocalDate startDate, String companyName, String ... departments) throws DatabaseException {
+	public void addEmployeeToPayroll(String name, double salary, char gender, LocalDate startDate,
+									String companyName, String ... departments) throws DatabaseException {
 		employeePayrollDataList.add(employeePayrollDBService.addEmployeePayrollToDB(name, salary, gender, startDate, companyName, departments));
 	}
 
