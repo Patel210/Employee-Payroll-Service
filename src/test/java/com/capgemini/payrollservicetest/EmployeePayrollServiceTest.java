@@ -50,6 +50,7 @@ public class EmployeePayrollServiceTest {
 		try {
 			employeePayrollService.updateEmployeeSalary("Terisa", 3000000.0);
 			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB("Terisa");
+			System.out.println(result);
 			assertTrue(result);
 		} catch (DatabaseException e) {}
 	}
