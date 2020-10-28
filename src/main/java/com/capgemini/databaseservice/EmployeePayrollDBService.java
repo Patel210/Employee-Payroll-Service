@@ -171,23 +171,38 @@ public class EmployeePayrollDBService {
 	 */
 	public EmployeePayrollData addEmployeePayrollToDB(String name, double salary, char gender, LocalDate startDate) 
 													  throws DatabaseException {
-		String query = String.format("INSERT INTO employee_payroll (name, gender, salary, start) VALUES ('%s', '%s', '%s', '%s');", 
-										name, gender, salary, Date.valueOf(startDate));
-		try(Connection connection = getConnection()){
-			Statement statement = connection.createStatement();
+		Connection connection = getConnection();
+		int empId = -1;
+		EmployeePayrollData employeePayrollData = null;
+		
+		try(Statement statement = connection.createStatement();){
+			String query = String.format("INSERT INTO employee_payroll (name, gender, salary, start) VALUES ('%s', '%s', '%s', '%s');", 
+					name, gender, salary, Date.valueOf(startDate));
 			int rowAffected = statement.executeUpdate(query, statement.RETURN_GENERATED_KEYS);
-			int empId = -1;
+			empId = -1;
 			if(rowAffected == 1) {
 				ResultSet result = statement.getGeneratedKeys();
 				if(result.next()) {
 						empId = result.getInt(1);
 				}
 			}
-			EmployeePayrollData employeePayrollData = new EmployeePayrollData(empId, name, salary, startDate, gender);
-			return employeePayrollData;
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
+		
+		try(Statement statement = connection.createStatement();){
+			double deductions = salary * 0.2;
+			double tax = (salary - deductions) * 0.1; 
+			String query = String.format("INSERT INTO payroll_details (employee_id, basic_pay, deductions, tax)"
+											+ "VALUES ('%s', '%s', '%s', '%s')", empId, salary, deductions, tax);
+			int rowAffected = statement.executeUpdate(query);
+			if(rowAffected == 1) {
+				employeePayrollData = new EmployeePayrollData(empId, name, salary, startDate, gender);
+			}
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+		return employeePayrollData;
 	}
 
 	/**
