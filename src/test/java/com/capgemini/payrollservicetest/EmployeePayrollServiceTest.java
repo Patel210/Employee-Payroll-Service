@@ -88,4 +88,12 @@ public class EmployeePayrollServiceTest {
 		Map<String, Double> minSalaryByGender = employeePayrollService.readMinSalaryByGender(IOService.DB_IO);
 		assertTrue(minSalaryByGender.get("M").equals(1000000.00) && minSalaryByGender.get("F").equals(3000000.00));
 	}
+	
+	@Test
+	public void givenPayrollDB_WhenMaximumSalaryRetrievedByGender_ShouldReturnCorrectResult() {
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		Map<String, Double> maxSalaryByGender = employeePayrollService.readMaxSalaryByGender(IOService.DB_IO);
+		assertTrue(maxSalaryByGender.get("M").equals(3000000.00) && maxSalaryByGender.get("F").equals(3000000.00));
+	}
 }
