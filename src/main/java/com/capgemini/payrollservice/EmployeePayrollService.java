@@ -1,5 +1,6 @@
 package com.capgemini.payrollservice;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -54,6 +55,23 @@ public class EmployeePayrollService {
 			}
 		}
 		return employeePayrollDataList;
+	}
+	
+	/**
+	 * @param service
+	 * @param startDate
+	 * @param endDate
+	 * @return List of Employee Payroll data between given date range
+	 */
+	public ArrayList<EmployeePayrollData> readEmployeePayrollDataForDateRange(IOService service, LocalDate startDate, LocalDate endDate) {
+		if(service.equals(IOService.DB_IO)) {
+			try {
+				return employeePayrollDBService.getEmployeeDataForDateRange(startDate, endDate);
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+		return null;
 	}
 
 	/**

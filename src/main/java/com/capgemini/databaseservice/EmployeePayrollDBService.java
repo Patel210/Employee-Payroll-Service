@@ -1,6 +1,7 @@
 package com.capgemini.databaseservice;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,13 +38,7 @@ public class EmployeePayrollDBService {
 	public ArrayList<EmployeePayrollData> readEmployeeData() throws DatabaseException {
 		ArrayList<EmployeePayrollData> list = new ArrayList<EmployeePayrollData>();
 		String query = "SELECT * FROM employee_payroll";
-		try (Connection connection = getConnection();) {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
-			return getEmployeePayrollData(resultSet);
-		} catch (SQLException e) {
-			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
-		}
+		return getEmployeePayrollData(query);
 	}
 	
 	/**
@@ -63,6 +58,20 @@ public class EmployeePayrollDBService {
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
+	}
+	
+
+	/**
+	 * @param startDate
+	 * @param endDate
+	 * @return Employee Payroll Data in given date range
+	 * @throws DatabaseException
+	 */
+	public ArrayList<EmployeePayrollData> getEmployeeDataForDateRange(LocalDate startDate, LocalDate endDate) throws DatabaseException {
+		String query = String.format("SELECT * FROM employee_payroll WHERE START BETWEEN '%s' AND '%s';", 
+										Date.valueOf(startDate), Date.valueOf(endDate));
+		
+		return getEmployeePayrollData(query);
 	}
 
 	/**
@@ -151,6 +160,20 @@ public class EmployeePayrollDBService {
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while getting prepared statement", ExceptionType.UNABLE_TO_GET_PREPARED_STATEMENT);
 		}
-		
+	}
+	
+	/**
+	 * @param query
+	 * @return Employee payroll data based on given query
+	 * @throws DatabaseException
+	 */
+	private ArrayList<EmployeePayrollData> getEmployeePayrollData(String query) throws DatabaseException {
+		try (Connection connection = getConnection();) {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			return getEmployeePayrollData(resultSet);
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
 	}
 }
