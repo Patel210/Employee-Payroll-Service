@@ -93,7 +93,7 @@ public class EmployeePayrollService {
 	
 	/**
 	 * @param service
-	 * @return Map containing gender as key and sum of salaries as value
+	 * @return Map containing gender as key and avg salary as value
 	 */
 	public Map<String, Double> readAverageSalaryByGender(IOService service) {
 		if(service.equals(IOService.DB_IO)) {
@@ -106,6 +106,20 @@ public class EmployeePayrollService {
 		return null;
 	}
 
+	/**
+	 * @param service
+	 * @return Map containing gender as key and min as value
+	 */
+	public Map<String, Double> readMinSalaryByGender(IOService service) {
+		if(service.equals(IOService.DB_IO)) {
+			try {
+				return employeePayrollDBService.getMinSalaryByGender();
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * Writes to file or consoles

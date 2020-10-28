@@ -94,6 +94,17 @@ public class EmployeePayrollDBService {
 		return performOperationsOnsalaryByGender(query);
 	}
 	
+
+	/**
+	 * @return minimum salary by gender
+	 * @throws DatabaseException
+	 */
+	public Map<String, Double> getMinSalaryByGender() throws DatabaseException {
+		String query = "SELECT gender, MIN(salary) as salary FROM employee_payroll GROUP BY gender";
+		return performOperationsOnsalaryByGender(query);
+	}
+
+	
 	/**
 	 * @param name
 	 * @param salary
