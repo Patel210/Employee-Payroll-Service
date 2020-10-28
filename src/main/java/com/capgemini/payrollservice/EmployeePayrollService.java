@@ -186,6 +186,14 @@ public class EmployeePayrollService {
 		}
 	}
 	
+	public void removeEmployeeFromDB(int id) {
+		try {
+			employeePayrollDBService.removeEmployee(id);
+		} catch (DatabaseException e) {
+			System.out.println(e.getMessage());
+		}	
+	}
+	
 	/**
 	 * @param name
 	 * @return T/F whether Payroll is in sync with DB or not

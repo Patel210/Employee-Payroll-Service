@@ -38,7 +38,7 @@ public class EmployeePayrollDBService {
 	 * Returns employee data from the DB
 	 */
 	public ArrayList<EmployeePayrollData> readEmployeeData() throws DatabaseException {
-		String query = "SELECT * FROM employee_payroll";
+		String query = "SELECT * FROM employee_payroll WHERE is_active = true";
 		return getEmployeePayrollData(query);
 	}
 	
@@ -205,6 +205,21 @@ public class EmployeePayrollDBService {
 		}
 		return employeePayrollData;
 	}
+	
+	/**
+	 * Removes employee from the DB
+	 */
+	public int removeEmployee(int id) throws DatabaseException {
+		try(Connection connection = getConnection()){
+			String query = "UPDATE employee_payroll SET is_active = false WHERE id = ?";
+			PreparedStatement prepareStatement = connection.prepareStatement(query);
+			prepareStatement.setInt(1, id);
+			int result = prepareStatement.executeUpdate();
+			return result;
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
 
 	/**
 	 * @returns Connection Object
@@ -339,7 +354,7 @@ public class EmployeePayrollDBService {
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
 	}
-
+	
 	/**
 	 * Adds Employee details to the employee table in DB
 	 */
