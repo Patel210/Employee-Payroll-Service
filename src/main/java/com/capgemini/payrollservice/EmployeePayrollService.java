@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import com.capgemini.databaseservice.EmployeePayrollDBService;
 import com.capgemini.exceptions.DatabaseException;
@@ -189,6 +190,9 @@ public class EmployeePayrollService {
 	public void removeEmployeeFromDB(int id) {
 		try {
 			employeePayrollDBService.removeEmployee(id);
+			employeePayrollDataList = employeePayrollDataList.stream()
+															 .filter(employeePayrollData -> employeePayrollData.getEmpId() != id)
+															 .collect(Collectors.toCollection(ArrayList::new));
 		} catch (DatabaseException e) {
 			System.out.println(e.getMessage());
 		}	

@@ -269,7 +269,7 @@ public class EmployeePayrollDBService {
 	 */
 	private void getPreparedStatementForEmployeeData() throws DatabaseException {
 		Connection connection = getConnection();
-		String query = "select * from employee_payroll where name = ?";
+		String query = "select * from employee_payroll where name = ? and is_active = true";
 		try {
 			employeePayrollDataPreparedStatement = connection.prepareStatement(query);
 		} catch (SQLException e) {
