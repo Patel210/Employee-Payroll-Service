@@ -121,6 +121,12 @@ public class EmployeePayrollServiceTest {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		employeePayrollService.removeEmployeeFromDB(1);
+		assertEquals(3, employeePayrollService.employeeDataSize());
+	}
+	
+	@Test
+	public void givenEmployeePayrollDB_WhenRetrieved_ShouldReturnOnlyActiveEmployees() {
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		assertEquals(3, employeePayrollService.employeeDataSize());
 	}
