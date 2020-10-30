@@ -189,25 +189,25 @@ public class EmployeePayrollService {
 	public void addEmployeeToPayrollWithThreads(List<EmployeePayrollData> employeeList) {
 		Map<Integer, Boolean> employeeInsertionStatus = new HashMap<Integer, Boolean>();
 		employeeList.forEach(employeePayrollData -> {
+			employeeInsertionStatus.put(employeePayrollData.hashCode(), false);
 			Runnable task = () -> {
-				employeeInsertionStatus.put(employeePayrollData.hashCode(), false);
-			try {
 				System.out.println("Employee Being added: " + Thread.currentThread().getName());
-				addEmployeeToPayroll(employeePayrollData.getEmpName(), employeePayrollData.getAddress(), 
-						employeePayrollData.getSalary(), employeePayrollData.getGender(), employeePayrollData.getStartDate(),
-						employeePayrollData.getCompanyName(), employeePayrollData.getDepartments());
+				try {
+					this.addEmployeeToPayroll(employeePayrollData.getEmpName(), employeePayrollData.getAddress(), 
+							employeePayrollData.getSalary(), employeePayrollData.getGender(), employeePayrollData.getStartDate(),
+							employeePayrollData.getCompanyName(), employeePayrollData.getDepartments());
+				} catch (DatabaseException e) {
+					System.out.println(e.getMessage());
+				}
 				employeeInsertionStatus.put(employeePayrollData.hashCode(), true);
 				System.out.println("Employee added: " + Thread.currentThread().getName());
-			} catch (DatabaseException e) {
-				System.out.println(e.getMessage());
-			}
 			};
 			Thread thread = new Thread(task, employeePayrollData.getEmpName());
 			thread.start();
 		});
 		while (employeeInsertionStatus.containsValue(false)) {
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(15);
 			} catch (InterruptedException e) {
 				System.out.println(e.getMessage());
 			}

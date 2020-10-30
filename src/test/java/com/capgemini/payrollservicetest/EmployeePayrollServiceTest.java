@@ -147,18 +147,13 @@ public class EmployeePayrollServiceTest {
 		employeePayrollService.addEmployeeToPayroll(Arrays.asList(arrayOfEmployees));
 		Instant end = Instant.now();
 		System.out.println("Duration for complete execution: " + Duration.between(start, end));
-		Instant threadStart = Instant.now();
-		employeePayrollService.addEmployeeToPayrollWithThreads(Arrays.asList(arrayOfEmployees));
-		Instant threadEnd = Instant.now();
-		System.out.println("Duration for complete execution with Threads: " + Duration.between(start, end));
-		assertEquals(6, employeePayrollService.employeeDataSize());
 	}
 	
 	@Test
 	public void givenMultipleEmployee_WhenAddedUsingMultiThreadingToDB_ShouldMatchTotalEntries() {
 		EmployeePayrollData[] arrayOfEmployees = { 
 				new EmployeePayrollData(0, "Parth", "Malta Road, Jaipur", 1500000.0, LocalDate.now(), "M".charAt(0), "BridgeLabz", "R&D", "Production"),
-				new EmployeePayrollData(0, "Sanya", "Santa Cruz, Jaipur", 3000000.0, LocalDate.now(), "F".charAt(0), "Capgemini", "Marketing"),
+				new EmployeePayrollData(0, "Sanya", "Santa Cruz, Mumbai", 3000000.0, LocalDate.now(), "F".charAt(0), "Capgemini", "Marketing"),
 				new EmployeePayrollData(0, "Salil", "WhiteField, Bangalore", 4000000.0, LocalDate.now(), "M".charAt(0), "BridgeLabz", "Production"),
 				new EmployeePayrollData(0, "Sunil", "Satelite Road, Ahmedabad", 2500000.0, LocalDate.now(), "M".charAt(0), "Barclays", "R&D", "Production")
 		};

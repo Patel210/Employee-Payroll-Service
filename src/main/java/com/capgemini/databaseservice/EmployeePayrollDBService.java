@@ -17,7 +17,7 @@ import com.capgemini.exceptions.DatabaseException.ExceptionType;
 import com.capgemini.payrolldata.EmployeePayrollData;
 
 public class EmployeePayrollDBService {
-	
+	private int connectionCounter = 0;
 	private PreparedStatement employeePayrollDataPreparedStatement;
 	private static EmployeePayrollDBService employeePayrollDBService;
 	
@@ -184,7 +184,7 @@ public class EmployeePayrollDBService {
 		}
 		
 		empId = addToEmployeeTable(connection, name, address, salary, gender, startDate, companyName);
-		addToPayrollDetails(connection, empId, salary); 
+		addToPayrollDetails(connection, empId, salary);
 		boolean result = addToEmployeeDepartmentTable(connection, empId, departments);
 		if(result) {
 			employeePayrollData = new EmployeePayrollData(empId, name, address, salary, startDate, gender, companyName, departments);
@@ -226,7 +226,8 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 * 
 	 */
-	private Connection getConnection() throws DatabaseException {
+	private synchronized Connection getConnection() throws DatabaseException {
+		connectionCounter++;
 		String jdbcURL = "jdbc:mysql://localhost:3306/employee_payroll_service";
 		String user = "root";
 		String password = "Gratitudelog1";
@@ -311,9 +312,8 @@ public class EmployeePayrollDBService {
 		}
 	}
 	
-	private int getDepartmentId(String department) throws DatabaseException {
+	private int getDepartmentId(Connection connection, String department) throws DatabaseException {
 		int departmentId = -1;
-		Connection connection = getConnection();
 		String query = "Select department_id from department where department_name = ?";
 		try(PreparedStatement statement = connection.prepareStatement(query);) {
 			statement.setString(1, department);
@@ -334,7 +334,7 @@ public class EmployeePayrollDBService {
 		try(Statement statement = connection.createStatement();){
 			boolean flag = true;
 			for(String department:departments) {
-				int departmentId = getDepartmentId(department);
+				int departmentId = getDepartmentId(connection, department);
 				if(departmentId!=-1) {
 					String query = String.format("insert into employee_department (employee_id, department_id) "
 						+ "Values ('%s','%s')", empId, departmentId);
