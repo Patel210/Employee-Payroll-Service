@@ -233,8 +233,11 @@ public class EmployeePayrollDBService {
 		String password = "Gratitudelog1";
 		Connection connection;
 		try {
+			System.out.println("Processing Thread: "+Thread.currentThread().getName()+
+								" Connecting to database with Id: "+ connectionCounter);
 			connection = DriverManager.getConnection(jdbcURL, user, password);
-			System.out.println("Connection successfully established!" + connection);
+			System.out.println("Processing Thread: "+Thread.currentThread().getName()+
+					" Id: "+ connectionCounter + " Connection successfully established!" + connection);
 		} catch (SQLException e) {
 			throw new DatabaseException("Unable to connect to the database", ExceptionType.UNABLE_TO_CONNECT);
 		}
