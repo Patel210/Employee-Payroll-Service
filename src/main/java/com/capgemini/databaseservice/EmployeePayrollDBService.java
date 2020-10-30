@@ -38,7 +38,7 @@ public class EmployeePayrollDBService {
 	 * Returns employee data from the DB
 	 */
 	public ArrayList<EmployeePayrollData> readEmployeeData() throws DatabaseException {
-		String query = "SELECT * FROM employee_payroll WHERE is_active = true";
+		String query = "SELECT * FROM employee WHERE is_active = true";
 		return getEmployeePayrollData(query);
 	}
 	
@@ -69,7 +69,7 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 */
 	public ArrayList<EmployeePayrollData> getEmployeeDataForDateRange(LocalDate startDate, LocalDate endDate) throws DatabaseException {
-		String query = String.format("SELECT * FROM employee_payroll WHERE START BETWEEN '%s' AND '%s';", 
+		String query = String.format("SELECT * FROM employee WHERE START BETWEEN '%s' AND '%s';", 
 										Date.valueOf(startDate), Date.valueOf(endDate));
 		
 		return getEmployeePayrollData(query);
@@ -81,7 +81,7 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 */
 	public Map<String, Double> getSumOfSalariesByGender() throws DatabaseException {
-		String query = "SELECT gender, SUM(salary) as salary FROM employee_payroll GROUP BY gender";
+		String query = "SELECT gender, SUM(salary) as salary FROM employee GROUP BY gender";
 		return performOperationsOnsalaryByGender(query);
 	}
 	
@@ -90,7 +90,7 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 */
 	public Map<String, Double> getAvgSalaryByGender() throws DatabaseException {
-		String query = "SELECT gender, AVG(salary) as salary FROM employee_payroll GROUP BY gender";
+		String query = "SELECT gender, AVG(salary) as salary FROM employee GROUP BY gender";
 		return performOperationsOnsalaryByGender(query);
 	}
 	
@@ -100,7 +100,7 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 */
 	public Map<String, Double> getMinSalaryByGender() throws DatabaseException {
-		String query = "SELECT gender, MIN(salary) as salary FROM employee_payroll GROUP BY gender";
+		String query = "SELECT gender, MIN(salary) as salary FROM employee GROUP BY gender";
 		return performOperationsOnsalaryByGender(query);
 	}
 
@@ -109,7 +109,7 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 */
 	public Map<String, Double> getMaxSalaryByGender() throws DatabaseException {
-		String query = "SELECT gender, MAX(salary) as salary FROM employee_payroll GROUP BY gender";
+		String query = "SELECT gender, MAX(salary) as salary FROM employee GROUP BY gender";
 		return performOperationsOnsalaryByGender(query);
 	}
 	
@@ -118,7 +118,7 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 */
 	public Map<String, Integer> getCountByGender() throws DatabaseException {
-		String query = "SELECT gender, Count(salary) as count FROM employee_payroll GROUP BY gender";
+		String query = "SELECT gender, Count(salary) as count FROM employee GROUP BY gender";
 		Map<String, Integer> map = new HashMap<String, Integer>();
 		try(Connection connection = getConnection();){
 			Statement statement = connection.createStatement();
@@ -139,7 +139,7 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 */
 	public int updateEmployeeSalary(String name, double salary) throws DatabaseException {
-		String query = String.format("update employee_payroll set salary = %.2f where name = '%s'", salary, name);
+		String query = String.format("update employee set salary = %.2f where name = '%s'", salary, name);
 		try (Connection connection = getConnection();) {
 			Statement statement = connection.createStatement();
 			return statement.executeUpdate(query);
@@ -155,7 +155,7 @@ public class EmployeePayrollDBService {
 	 * updates the employee salary using prepared statement
 	 */
 	public int updateEmployeeSalaryUsingPreparedStatement(String name, double salary) throws DatabaseException {
-		String query = String.format("update employee_payroll set salary = ? where name = ?");
+		String query = String.format("update employee set salary = ? where name = ?");
 		try (Connection connection = getConnection();) {
 			PreparedStatement prepareStatement = connection.prepareStatement(query);
 			prepareStatement.setString(2, name);
@@ -169,7 +169,7 @@ public class EmployeePayrollDBService {
 	/**
 	 *Adds Employee Payroll Data to data base
 	 */
-	public EmployeePayrollData addEmployeePayrollToDB(String name, double salary, char gender, LocalDate startDate,
+	public EmployeePayrollData addEmployeePayrollToDB(String name, String address, double salary, char gender, LocalDate startDate,
 													  String companyName, String ... departments) 
 													  throws DatabaseException {
 		Connection connection = null;
@@ -183,11 +183,11 @@ public class EmployeePayrollDBService {
 			throw new DatabaseException("Error while setting Auto Commit", ExceptionType.AUTO_COMMIT_ERROR);
 		}
 		
-		empId = addToEmployeeTable(connection, name, salary, gender, startDate, companyName);
+		empId = addToEmployeeTable(connection, name, address, salary, gender, startDate, companyName);
 		addToPayrollDetails(connection, empId, salary); 
 		boolean result = addToEmployeeDepartmentTable(connection, empId, departments);
 		if(result) {
-			employeePayrollData = new EmployeePayrollData(empId, name, salary, startDate, gender, companyName, departments);
+			employeePayrollData = new EmployeePayrollData(empId, name, address, salary, startDate, gender, companyName, departments);
 		}
 		
 		try {
@@ -211,7 +211,7 @@ public class EmployeePayrollDBService {
 	 */
 	public int removeEmployee(int id) throws DatabaseException {
 		try(Connection connection = getConnection()){
-			String query = "UPDATE employee_payroll SET is_active = false WHERE id = ?";
+			String query = "UPDATE employee SET is_active = false WHERE id = ?";
 			PreparedStatement prepareStatement = connection.prepareStatement(query);
 			prepareStatement.setInt(1, id);
 			int result = prepareStatement.executeUpdate();
@@ -269,7 +269,7 @@ public class EmployeePayrollDBService {
 	 */
 	private void getPreparedStatementForEmployeeData() throws DatabaseException {
 		Connection connection = getConnection();
-		String query = "select * from employee_payroll where name = ? and is_active = true";
+		String query = "select * from employee where name = ? and is_active = true";
 		try {
 			employeePayrollDataPreparedStatement = connection.prepareStatement(query);
 		} catch (SQLException e) {
@@ -358,13 +358,13 @@ public class EmployeePayrollDBService {
 	/**
 	 * Adds Employee details to the employee table in DB
 	 */
-	private int addToEmployeeTable(Connection connection, String name, double salary, char gender, LocalDate startDate,
+	private int addToEmployeeTable(Connection connection, String name, String address, double salary, char gender, LocalDate startDate,
 			String companyName) throws DatabaseException {
 		int empId = -1;
 		try(Statement statement = connection.createStatement();){
-			String query = String.format("INSERT INTO employee_payroll (company_name, name, gender, salary, start) "+
-										  "VALUES ('%s', '%s', '%s', '%s', '%s');", 
-										 companyName, name, gender, salary, Date.valueOf(startDate));
+			String query = String.format("INSERT INTO employee (company_name, name, address, gender, salary, start) "+
+										  "VALUES ('%s', '%s', '%s','%s', '%s', '%s');", 
+										 companyName, name, address, gender, salary, Date.valueOf(startDate));
 			int rowAffected = statement.executeUpdate(query, statement.RETURN_GENERATED_KEYS);
 			empId = -1;
 			if(rowAffected == 1) {

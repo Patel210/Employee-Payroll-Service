@@ -2,6 +2,7 @@ package com.capgemini.payrollservice;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -164,13 +165,29 @@ public class EmployeePayrollService {
 		}
 
 	}
+	
+	/**
+	 * Add multiple employees to the DB
+	 */
+	public void addEmployeeToPayroll(List<EmployeePayrollData> employeeList) {
+		employeeList.forEach(employeePayrollData -> {
+			try {
+				System.out.println("Employee Being added: " + employeePayrollData.getEmpName());
+				addEmployeeToPayroll(employeePayrollData.getEmpName(), employeePayrollData.getAddress(), 
+						employeePayrollData.getSalary(), employeePayrollData.getGender(), employeePayrollData.getStartDate(), employeePayrollData.getCompanyName(), employeePayrollData.getDepartments());
+				System.out.println("Employee added: " + employeePayrollData.getEmpName());
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+		});
+	}
 
 	/**
 	 * To add Employee Payroll Data to Database;
 	 */
-	public void addEmployeeToPayroll(String name, double salary, char gender, LocalDate startDate,
+	public void addEmployeeToPayroll(String name, String address, double salary, char gender, LocalDate startDate,
 									String companyName, String ... departments) throws DatabaseException {
-		employeePayrollDataList.add(employeePayrollDBService.addEmployeePayrollToDB(name, salary, gender, startDate, companyName, departments));
+		employeePayrollDataList.add(employeePayrollDBService.addEmployeePayrollToDB(name, address, salary, gender, startDate, companyName, departments));
 	}
 
 	/**
@@ -187,6 +204,9 @@ public class EmployeePayrollService {
 		}
 	}
 	
+	/**
+	 * Remove employee with given id from the DB
+	 */
 	public void removeEmployeeFromDB(int id) {
 		try {
 			employeePayrollDBService.removeEmployee(id);
