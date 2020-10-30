@@ -1,6 +1,7 @@
 package com.capgemini.payrolldata;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class EmployeePayrollData {
 
@@ -84,6 +85,11 @@ public class EmployeePayrollData {
 	
 	public String getCompanyName() {
 		return companyName;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(empId, companyName, empName, address, salary, startDate, gender, departments);
 	}
 
 	@Override

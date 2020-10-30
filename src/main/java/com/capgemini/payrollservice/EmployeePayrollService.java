@@ -2,6 +2,7 @@ package com.capgemini.payrollservice;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -180,6 +181,37 @@ public class EmployeePayrollService {
 				System.out.println(e.getMessage());
 			}
 		});
+	}
+	
+	/**
+	 * Add multiple employees to the DB using threads
+	 */
+	public void addEmployeeToPayrollWithThreads(List<EmployeePayrollData> employeeList) {
+		Map<Integer, Boolean> employeeInsertionStatus = new HashMap<Integer, Boolean>();
+		employeeList.forEach(employeePayrollData -> {
+			Runnable task = () -> {
+				employeeInsertionStatus.put(employeePayrollData.hashCode(), false);
+			try {
+				System.out.println("Employee Being added: " + Thread.currentThread().getName());
+				addEmployeeToPayroll(employeePayrollData.getEmpName(), employeePayrollData.getAddress(), 
+						employeePayrollData.getSalary(), employeePayrollData.getGender(), employeePayrollData.getStartDate(),
+						employeePayrollData.getCompanyName(), employeePayrollData.getDepartments());
+				employeeInsertionStatus.put(employeePayrollData.hashCode(), true);
+				System.out.println("Employee added: " + Thread.currentThread().getName());
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+			};
+			Thread thread = new Thread(task, employeePayrollData.getEmpName());
+			thread.start();
+		});
+		while (employeeInsertionStatus.containsValue(false)) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				System.out.println(e.getMessage());
+			}
+		}
 	}
 
 	/**
