@@ -7,6 +7,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -172,38 +174,65 @@ public class EmployeePayrollDBService {
 	public EmployeePayrollData addEmployeePayrollToDB(String name, String address, double salary, char gender, LocalDate startDate,
 													  String companyName, String ... departments) 
 													  throws DatabaseException {
-		Connection connection = null;
-		int empId = -1;
-		EmployeePayrollData employeePayrollData = null;
+		Connection[] connection = new Connection[1];
+		EmployeePayrollData[] employeePayrollData = new EmployeePayrollData[1];
 		
 		try {
-			connection = getConnection();
-			connection.setAutoCommit(false);
+			connection[0] = getConnection();
+			connection[0].setAutoCommit(false);
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while setting Auto Commit", ExceptionType.AUTO_COMMIT_ERROR);
 		}
+		int empId = addToEmployeeTable(connection[0], name, address, salary, gender, startDate, companyName);
+		boolean[] flag = {false, false};
 		
-		empId = addToEmployeeTable(connection, name, address, salary, gender, startDate, companyName);
-		addToPayrollDetails(connection, empId, salary);
-		boolean result = addToEmployeeDepartmentTable(connection, empId, departments);
-		if(result) {
-			employeePayrollData = new EmployeePayrollData(empId, name, address, salary, startDate, gender, companyName, departments);
+		Runnable task1 = () -> {
+				try {
+					addToPayrollDetails(connection[0], empId, salary);
+				} catch (DatabaseException e) {
+					System.out.println(e.getMessage());
+				}
+				flag[0] = true;
+			};
+		Thread thread1 = new Thread(task1);
+		thread1.start();
+		
+		Runnable task2 = () -> {
+			try {
+				boolean result = addToEmployeeDepartmentTable(connection[0], empId, departments);
+				if(result) {
+					employeePayrollData[0] = new EmployeePayrollData(empId, name, address, salary, startDate, gender, companyName, departments);
+				}
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+			flag[1] = true;
+		};
+		Thread thread2 = new Thread(task2);
+		thread2.start();
+	
+		while(flag[0] == false || flag[1] == false) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				System.out.println(e.getMessage());
+			}
 		}
 		
 		try {
-			connection.commit();
+			connection[0].commit();
 		} catch (SQLException e) {
 			throw new DatabaseException("Cannot Commit", ExceptionType.UNABLE_TO_COMMIT);
 		}finally {
 			if (connection != null) {
 				try {
-					connection.close();
+					connection[0].close();
 				} catch (SQLException e) {
 					throw new DatabaseException("Cannot close connection object", ExceptionType.UNABLE_TO_CLOSE_CONNECTION);
 				}
 			}
 		}
-		return employeePayrollData;
+		return employeePayrollData[0];
 	}
 	
 	/**

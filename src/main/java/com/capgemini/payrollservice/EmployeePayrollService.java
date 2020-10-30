@@ -207,7 +207,7 @@ public class EmployeePayrollService {
 		});
 		while (employeeInsertionStatus.containsValue(false)) {
 			try {
-				Thread.sleep(15);
+				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				System.out.println(e.getMessage());
 			}
