@@ -2,8 +2,11 @@ package com.capgemini.payrollservicetest;
 
 import static org.junit.Assert.*;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.junit.Test;
@@ -102,7 +105,7 @@ public class EmployeePayrollServiceTest {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		Map<String, Integer> countByGender = employeePayrollService.readEmployeeCountByGender(IOService.DB_IO);
-		assertTrue(countByGender.get("M").equals(3) && countByGender.get("F").equals(1));
+		assertTrue(countByGender.get("M").equals(2) && countByGender.get("F").equals(1));
 	}
 	 
 	@Test
@@ -110,7 +113,7 @@ public class EmployeePayrollServiceTest {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		try {
-			employeePayrollService.addEmployeeToPayroll("Mark", 4000000.0, 'M', LocalDate.now(), "Capgemini", "Sales" , "Marketing");
+			employeePayrollService.addEmployeeToPayroll("Mark", "Brooklyn Road, New York", 4000000.0, 'M', LocalDate.now(), "Capgemini", "Sales" , "Marketing");
 			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB("Mark");
 			assertTrue(result);
 		} catch (DatabaseException e) {System.out.println(e.getMessage());}
@@ -129,5 +132,21 @@ public class EmployeePayrollServiceTest {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		assertEquals(3, employeePayrollService.employeeDataSize());
+	}
+	
+	@Test
+	public void givenMultipleEmployee_WhenAddedToDB_ShouldMatchTotalEntries() {
+		EmployeePayrollData[] arrayOfEmployees = { 
+				new EmployeePayrollData(0, "Tushar", "Malta Road, Jaipur", 1500000.0, LocalDate.now(), "M".charAt(0), "BridgeLabz", "R&D", "Production"),
+				new EmployeePayrollData(0, "Vaibhavi", "Santa Cruz, Jaipur", 3000000.0, LocalDate.now(), "F".charAt(0), "Capgemini", "Marketing"),
+				new EmployeePayrollData(0, "Adeesh", "WhiteField, Bangalore", 4000000.0, LocalDate.now(), "M".charAt(0), "BridgeLabz", "Production")
+		};
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		Instant start = Instant.now();
+		employeePayrollService.addEmployeeToPayroll(Arrays.asList(arrayOfEmployees));
+		Instant end = Instant.now();
+		System.out.println("Duration for complete execution: " + Duration.between(start, end));
+		assertEquals(6, employeePayrollService.employeeDataSize());
 	}
 }
