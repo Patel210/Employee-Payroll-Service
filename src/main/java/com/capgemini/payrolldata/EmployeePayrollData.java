@@ -51,7 +51,7 @@ public class EmployeePayrollData {
 		this.empName = empName;
 	}
 
-	public long getEmpId() {
+	public int getEmpId() {
 		return empId;
 	}
 

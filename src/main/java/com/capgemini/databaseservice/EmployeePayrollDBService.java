@@ -7,10 +7,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,8 +39,8 @@ public class EmployeePayrollDBService {
 	 * Returns employee data from the DB
 	 */
 	public ArrayList<EmployeePayrollData> readEmployeeData() throws DatabaseException {
-		String query = "SELECT * FROM employee WHERE is_active = true";
-		return getEmployeePayrollData(query);
+		String query = "select * from employee where is_active = true;";
+		return getEmployeeData(query);
 	}
 	
 	/**
@@ -50,20 +49,19 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 * @throws  
 	 */
-	public ArrayList<EmployeePayrollData> getEmployeeData(String name) throws DatabaseException {
+	public synchronized EmployeePayrollData getEmployeeData(int id) throws DatabaseException {
 		if(employeePayrollDataPreparedStatement == null) {
 			getPreparedStatementForEmployeeData();
 		}
 		try {
-			employeePayrollDataPreparedStatement.setString(1, name);
+			employeePayrollDataPreparedStatement.setInt(1, id);
 			ResultSet result = employeePayrollDataPreparedStatement.executeQuery();
-			return getEmployeePayrollData(result);
+			return getEmployeeData(result).get(0);
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
 	}
 	
-
 	/**
 	 * @param startDate
 	 * @param endDate
@@ -74,7 +72,7 @@ public class EmployeePayrollDBService {
 		String query = String.format("SELECT * FROM employee WHERE START BETWEEN '%s' AND '%s';", 
 										Date.valueOf(startDate), Date.valueOf(endDate));
 		
-		return getEmployeePayrollData(query);
+		return getEmployeeData(query);
 	}
 	
 
@@ -133,22 +131,6 @@ public class EmployeePayrollDBService {
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
 	}
-
-	/**
-	 * @param name
-	 * @param salary
-	 * @return execute update output
-	 * @throws DatabaseException
-	 */
-	public int updateEmployeeSalary(String name, double salary) throws DatabaseException {
-		String query = String.format("update employee set salary = %.2f where name = '%s'", salary, name);
-		try (Connection connection = getConnection();) {
-			Statement statement = connection.createStatement();
-			return statement.executeUpdate(query);
-		} catch (SQLException e) {
-			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
-		}
-	}
 	
 	/**
 	 * @param name
@@ -156,16 +138,60 @@ public class EmployeePayrollDBService {
 	 * @throws DatabaseException
 	 * updates the employee salary using prepared statement
 	 */
-	public int updateEmployeeSalaryUsingPreparedStatement(String name, double salary) throws DatabaseException {
-		String query = String.format("update employee set salary = ? where name = ?");
-		try (Connection connection = getConnection();) {
-			PreparedStatement prepareStatement = connection.prepareStatement(query);
-			prepareStatement.setString(2, name);
-			prepareStatement.setDouble(1, salary);
-			return prepareStatement.executeUpdate();
+	public int updateEmployeeSalary(int id, double salary) throws DatabaseException{
+		Connection[] connection = new Connection[1];
+		try {
+			connection[0] = getConnection();
+			connection[0].setAutoCommit(false);
 		} catch (SQLException e) {
-			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+			throw new DatabaseException("Error while setting Auto Commit", ExceptionType.AUTO_COMMIT_ERROR);
 		}
+		
+		boolean[] flag = {false,false};
+		synchronized (this) {
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						int rowAffected = updateEmployeeSalaryInEmployeeTable(connection[0], id, salary);
+						flag[0] = true;
+					} catch (DatabaseException e) {}
+				}
+			}).start();
+			
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						int rowAffected = updatePayrollDetails(connection[0], id, salary);
+						flag[1] = true;
+					} catch (DatabaseException e) {}
+				}
+			}).start();
+		}
+		
+		while(flag[0] == false || flag[1] == false) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+		
+		try {
+			 connection[0].commit();
+		} catch (SQLException e) {
+			throw new DatabaseException("Cannot Commit", ExceptionType.UNABLE_TO_COMMIT);
+		}finally {
+			if (connection != null) {
+				try {
+					connection[0].close();
+				} catch (SQLException e) {
+					throw new DatabaseException("Cannot close connection object", ExceptionType.UNABLE_TO_CLOSE_CONNECTION);
+				}
+			}
+		}
+		return 1;
 	}
 	
 	/**
@@ -183,10 +209,11 @@ public class EmployeePayrollDBService {
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while setting Auto Commit", ExceptionType.AUTO_COMMIT_ERROR);
 		}
-		int empId = addToEmployeeTable(connection[0], name, address, salary, gender, startDate, companyName);
-		boolean[] flag = {false, false};
 		
-		Runnable task1 = () -> {
+		boolean[] flag = {false, false};
+		synchronized (this) {
+			int empId = addToEmployeeTable(connection[0], name, address, salary, gender, startDate, companyName);
+			Runnable task1 = () -> {
 				try {
 					addToPayrollDetails(connection[0], empId, salary);
 				} catch (DatabaseException e) {
@@ -194,22 +221,23 @@ public class EmployeePayrollDBService {
 				}
 				flag[0] = true;
 			};
-		Thread thread1 = new Thread(task1);
-		thread1.start();
-		
-		Runnable task2 = () -> {
-			try {
-				boolean result = addToEmployeeDepartmentTable(connection[0], empId, departments);
-				if(result) {
-					employeePayrollData[0] = new EmployeePayrollData(empId, name, address, salary, startDate, gender, companyName, departments);
+			Thread thread1 = new Thread(task1);
+			thread1.start();
+			
+			Runnable task2 = () -> {
+				try {
+					boolean result = addToEmployeeDepartmentTable(connection[0], empId, departments);
+					if(result) {
+						employeePayrollData[0] = new EmployeePayrollData(empId, name, address, salary, startDate, gender, companyName, departments);
+					}
+				} catch (DatabaseException e) {
+					System.out.println(e.getMessage());
 				}
-			} catch (DatabaseException e) {
-				System.out.println(e.getMessage());
-			}
-			flag[1] = true;
-		};
-		Thread thread2 = new Thread(task2);
-		thread2.start();
+				flag[1] = true;
+			};
+			Thread thread2 = new Thread(task2);
+			thread2.start();
+		}
 	
 		while(flag[0] == false || flag[1] == false) {
 			try {
@@ -278,22 +306,44 @@ public class EmployeePayrollDBService {
 	 * @return List of Employee Payroll Data object using Result set
 	 * @throws DatabaseException
 	 */
-	private ArrayList<EmployeePayrollData> getEmployeePayrollData(ResultSet result) throws DatabaseException {
+	private ArrayList<EmployeePayrollData> getEmployeeData(ResultSet result) throws DatabaseException {
 		ArrayList<EmployeePayrollData> list = new ArrayList<EmployeePayrollData>();
 		try {
 			while (result.next()) {
 				int id = result.getInt("id");
 				String companyName = result.getString("company_name");
 				String name = result.getString("name");
+				String address = result.getString("address");
 				Double salary = result.getDouble("salary");
 				LocalDate date = result.getDate("start").toLocalDate();
 				String gender = result.getString("gender");
-				list.add(new EmployeePayrollData(id, companyName, name, salary, date, gender.charAt(0)));
+				String[] departments = getDepartmentForGivenEmployeeId(id);
+				list.add(new EmployeePayrollData(id, name, address, salary, date, gender.charAt(0), companyName, departments));
 			}
 			return list;
 		} catch (SQLException e) {
+			System.out.println(e.getMessage());
 			throw new DatabaseException("Error in retriving data", ExceptionType.UNABLE_TO_RETRIEVE_DATA);
 		}
+	}
+
+	/**
+	 * Returns the departments of an employee 
+	 */
+	private String[] getDepartmentForGivenEmployeeId(int id) throws DatabaseException {
+		ArrayList<String> departments = new ArrayList<String>();
+		String query = "select department_name from department where department_id in (select department_id from employee_department where employee_id = ?)";
+		try(Connection connection = getConnection()){
+			PreparedStatement statement = connection.prepareStatement(query);
+			statement.setInt(1, id);
+			ResultSet result = statement.executeQuery();
+			while(result.next()) {
+				departments.add(result.getString("department_name"));
+			}
+		} catch(SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+		return Arrays.copyOf(departments.toArray(), departments.size(), String[].class);
 	}
 
 	/**
@@ -301,9 +351,9 @@ public class EmployeePayrollDBService {
 	 * Sets the prepared statement to view employee data for a given name
 	 */
 	private void getPreparedStatementForEmployeeData() throws DatabaseException {
-		Connection connection = getConnection();
-		String query = "select * from employee where name = ? and is_active = true";
+		String query = "select * from employee where id = ? and is_active=true;";
 		try {
+			Connection connection = getConnection();
 			employeePayrollDataPreparedStatement = connection.prepareStatement(query);
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while getting prepared statement", ExceptionType.UNABLE_TO_GET_PREPARED_STATEMENT);
@@ -315,11 +365,11 @@ public class EmployeePayrollDBService {
 	 * @return Employee payroll data based on given query
 	 * @throws DatabaseException
 	 */
-	private ArrayList<EmployeePayrollData> getEmployeePayrollData(String query) throws DatabaseException {
+	private ArrayList<EmployeePayrollData> getEmployeeData(String query) throws DatabaseException {
 		try (Connection connection = getConnection();) {
 			Statement statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(query);
-			return getEmployeePayrollData(resultSet);
+			return getEmployeeData(resultSet);
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
@@ -344,6 +394,9 @@ public class EmployeePayrollDBService {
 		}
 	}
 	
+	/**
+	 * To get DepartmentId for a given department in the database
+	 */
 	private int getDepartmentId(Connection connection, String department) throws DatabaseException {
 		int departmentId = -1;
 		String query = "Select department_id from department where department_name = ?";
@@ -419,19 +472,63 @@ public class EmployeePayrollDBService {
 	/**
 	 * add employee's payroll details to payroll table
 	 */
-	private void addToPayrollDetails(Connection connection, int empId, double salary) throws DatabaseException {
+	private int addToPayrollDetails(Connection connection, int empId, double salary) throws DatabaseException {
 		try(Statement statement = connection.createStatement();){
 			double deductions = salary * 0.2;
 			double tax = (salary - deductions) * 0.1; 
 			String query = String.format("INSERT INTO payroll_details (employee_id, basic_pay, deductions, tax)"
 											+ "VALUES ('%s', '%s', '%s', '%s')", empId, salary, deductions, tax);
-			statement.executeUpdate(query);
+			return statement.executeUpdate(query);
 		} catch (SQLException e) {
 			try {
 				connection.rollback();
 			} catch (SQLException ex) {
 				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
 			}
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
+	
+
+	/**
+	 * Updating the employee salary in employee table
+	 */
+	private int updateEmployeeSalaryInEmployeeTable(Connection connection, int id, double salary) throws DatabaseException {
+		String query = "UPDATE employee SET salary = ? where id = ?";
+		try (PreparedStatement prepareStatement = connection.prepareStatement(query)){
+			prepareStatement.setDouble(1, salary);
+			prepareStatement.setInt(2, id);
+			return prepareStatement.executeUpdate();
+		} catch (SQLException e) {
+			try {
+				connection.rollback();
+			} catch (SQLException ex) {
+				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
+			}
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
+	
+	/**
+	 * Updating the payroll details for an employee
+	 */
+	private int updatePayrollDetails(Connection connection, int id, double salary) throws DatabaseException {
+		String query = "UPDATE payroll_details SET basic_pay = ?, deductions = ?, tax = ? WHERE employee_id = ?";
+		try(PreparedStatement preparedStatement = connection.prepareStatement(query);){
+			double deductions = salary * 0.2;
+			double tax = (salary - deductions) * 0.1; 
+			preparedStatement.setDouble(1, salary);
+			preparedStatement.setDouble(2, deductions);
+			preparedStatement.setDouble(3, tax);
+			preparedStatement.setInt(4, id);
+			return preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			try {
+				connection.rollback();
+			} catch (SQLException ex) {
+				throw new DatabaseException("Cannot Roll Back", ExceptionType.UNABLE_TO_ROLL_BACK);
+			}
+			System.out.println(e.getMessage());
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
 	}

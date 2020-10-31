@@ -217,9 +217,12 @@ public class EmployeePayrollService {
 	/**
 	 * To add Employee Payroll Data to Database;
 	 */
-	public void addEmployeeToPayroll(String name, String address, double salary, char gender, LocalDate startDate,
+	public int addEmployeeToPayroll(String name, String address, double salary, char gender, LocalDate startDate,
 									String companyName, String ... departments) throws DatabaseException {
-		employeePayrollDataList.add(employeePayrollDBService.addEmployeePayrollToDB(name, address, salary, gender, startDate, companyName, departments));
+		EmployeePayrollData employeePayrollData = employeePayrollDBService.addEmployeePayrollToDB(name, address, salary, gender,
+																									startDate, companyName, departments);
+		employeePayrollDataList.add(employeePayrollData);
+		return employeePayrollData.getEmpId();
 	}
 
 	/**
@@ -228,14 +231,48 @@ public class EmployeePayrollService {
 	 * @throws DatabaseException
 	 * To Update Employee Salary
 	 */
-	public void updateEmployeeSalary(String name, double salary) throws DatabaseException {
-		int result = employeePayrollDBService.updateEmployeeSalaryUsingPreparedStatement(name, salary);
+	public void updateEmployeeSalary(int id, double salary) throws DatabaseException {
+		int result = employeePayrollDBService.updateEmployeeSalary(id, salary);
 		if (result != 0) {
-			EmployeePayrollData employeePayrollData = getEmployeeData(name);
+			EmployeePayrollData employeePayrollData = getEmployeeData(id);
 			if(employeePayrollData != null) employeePayrollData.setSalary(salary);
 		}
 	}
 	
+	/**
+	 * Update multiple employee salary using threads
+	 */
+	public boolean updateEmployeeSalary(Map<Integer, Double> newSalaries) {
+		Map<Integer, Boolean> salaryUpdationStatus = new HashMap<Integer, Boolean>();
+		Map<Integer, Boolean> syncStatus = new HashMap<Integer, Boolean>();
+		newSalaries.entrySet().forEach(entry -> {
+			int id = entry.getKey();
+			double salary = entry.getValue();
+			salaryUpdationStatus.put(id, false);
+			Runnable task = () -> {
+				System.out.println("Employee Being Updated Id: " + Thread.currentThread().getName());
+				try {
+					updateEmployeeSalary(id, salary);
+					syncStatus.put(id, isEmployeePayrollInSyncWithDB(id));
+				} catch (DatabaseException e) {
+					System.out.println(e.getMessage());
+				}
+				salaryUpdationStatus.put(id, true);
+				System.out.println("Employee Updated Id: " + Thread.currentThread().getName());
+			};
+			Thread thread = new Thread(task, String.valueOf(id));
+			thread.start();
+		});
+		while (salaryUpdationStatus.containsValue(false)) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+		return (syncStatus.containsValue(false)) ? false : true;
+	}
+
 	/**
 	 * Remove employee with given id from the DB
 	 */
@@ -255,18 +292,18 @@ public class EmployeePayrollService {
 	 * @return T/F whether Payroll is in sync with DB or not
 	 * @throws DatabaseException
 	 */
-	public boolean isEmployeePayrollInSyncWithDB(String name) throws DatabaseException {
-		ArrayList<EmployeePayrollData> list = employeePayrollDBService.getEmployeeData(name);
-		return list.get(0).equals(getEmployeeData(name));
+	public boolean isEmployeePayrollInSyncWithDB(int id) throws DatabaseException {
+		EmployeePayrollData list = employeePayrollDBService.getEmployeeData(id);
+		return list.equals(getEmployeeData(id));
 	}
 
 	/**
 	 * @param name
 	 * @returns Employee Payroll Data Object with given employee name
 	 */
-	private EmployeePayrollData getEmployeeData(String name) {
+	private EmployeePayrollData getEmployeeData(int id) {
 		return employeePayrollDataList.stream()
-									  .filter(employeePayrollData -> employeePayrollData.getEmpName().equals(name))
+									  .filter(employeePayrollData -> employeePayrollData.getEmpId() == id)
 									  .findFirst()
 									  .orElse(null);
 	}
@@ -295,4 +332,5 @@ public class EmployeePayrollService {
 	public long employeeDataSize() {
 		return employeePayrollDataList.size();
 	}
+
 }
