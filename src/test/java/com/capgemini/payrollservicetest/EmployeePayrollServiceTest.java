@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
@@ -52,8 +53,8 @@ public class EmployeePayrollServiceTest {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		try {
-			employeePayrollService.updateEmployeeSalary("Terisa", 3000000.0);
-			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB("Terisa");
+			employeePayrollService.updateEmployeeSalary(2, 3000000.0);
+			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB(2);
 			assertTrue(result);
 		} catch (DatabaseException e) {}
 	}
@@ -113,8 +114,8 @@ public class EmployeePayrollServiceTest {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		try {
-			employeePayrollService.addEmployeeToPayroll("Mark", "Brooklyn Road, New York", 4000000.0, 'M', LocalDate.now(), "Capgemini", "Sales" , "Marketing");
-			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB("Mark");
+			int id = employeePayrollService.addEmployeeToPayroll("Mark", "Brooklyn Road, New York", 4000000.0, 'M', LocalDate.now(), "Capgemini", "Sales" , "Marketing");
+			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB(id);
 			assertTrue(result);
 		} catch (DatabaseException e) {System.out.println(e.getMessage());}
 	}
@@ -147,6 +148,7 @@ public class EmployeePayrollServiceTest {
 		employeePayrollService.addEmployeeToPayroll(Arrays.asList(arrayOfEmployees));
 		Instant end = Instant.now();
 		System.out.println("Duration for complete execution: " + Duration.between(start, end));
+		assertEquals(6, employeePayrollService.employeeDataSize());
 	}
 	
 	@Test
@@ -164,5 +166,21 @@ public class EmployeePayrollServiceTest {
 		Instant threadEnd = Instant.now();
 		System.out.println("Duration for complete execution with Threads: " + Duration.between(threadStart, threadEnd));
 		assertEquals(10, employeePayrollService.employeeDataSize());
+	}
+	
+	@Test
+	public void givenNewSalariesForMultipleEmployees_WhenUpdatedInDB_ShouldBeInSyncWithDB() {
+		Map<Integer, Double> newSalaries = new HashMap<Integer, Double>();
+		newSalaries.put(7, 1000000.0);
+		newSalaries.put(8, 2300000.0);
+		newSalaries.put(9, 3000000.0);
+		newSalaries.put(10, 1500000.0);
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+		employeePayrollService.readEmployeeData(IOService.DB_IO);
+		Instant threadStart = Instant.now();
+		boolean result = employeePayrollService.updateEmployeeSalary(newSalaries);
+		Instant threadEnd = Instant.now();
+		System.out.println("Duration for complete execution with Threads: " + Duration.between(threadStart, threadEnd));
+		assertTrue(result);
 	}
 }
