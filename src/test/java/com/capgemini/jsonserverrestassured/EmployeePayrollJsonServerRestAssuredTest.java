@@ -12,6 +12,7 @@ import com.capgemini.payrolldata.EmployeePayrollData;
 import com.capgemini.payrollservice.EmployeePayrollService;
 import com.capgemini.payrollservice.EmployeePayrollService.IOService;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
@@ -50,6 +51,10 @@ public class EmployeePayrollJsonServerRestAssuredTest {
 		int statusCode = response.getStatusCode();
 		assertEquals(201, statusCode);
 		
+		String responseAsString = response.asString();
+		JsonObject jsonObject = new Gson().fromJson(responseAsString, JsonObject.class);
+		int id = jsonObject.get("id").getAsInt();
+		employeePayrollData.setId(id);
 		employeePayrollService.addEmployeeToPayroll(employeePayrollData, IOService.REST_IO);
 		long enteries = employeePayrollService.countEntries(IOService.REST_IO);
 		assertEquals(2, enteries);
