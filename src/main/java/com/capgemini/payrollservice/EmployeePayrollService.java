@@ -245,12 +245,18 @@ public class EmployeePayrollService {
 	 * @throws DatabaseException
 	 * To Update Employee Salary
 	 */
-	public void updateEmployeeSalary(int id, double salary) throws DatabaseException {
-		int result = employeePayrollDBService.updateEmployeeSalary(id, salary);
-		if (result != 0) {
-			EmployeePayrollData employeePayrollData = getEmployeeData(id);
-			if(employeePayrollData != null) employeePayrollData.setSalary(salary);
+	public void updateEmployeeSalary(int id, double salary, IOService ioService) {
+		if (ioService.equals(IOService.DB_IO)) {
+			int result = 0;
+			try {
+				result = employeePayrollDBService.updateEmployeeSalary(id, salary);
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+			if (result == 0) return;
 		}
+		EmployeePayrollData employeePayrollData = getEmployeePayrollData(id);
+		if (employeePayrollData != null) employeePayrollData.setSalary(salary);
 	}
 	
 	/**
@@ -266,7 +272,7 @@ public class EmployeePayrollService {
 			Runnable task = () -> {
 				System.out.println("Employee Being Updated Id: " + Thread.currentThread().getName());
 				try {
-					updateEmployeeSalary(id, salary);
+					updateEmployeeSalary(id, salary, IOService.DB_IO);
 					syncStatus.put(id, isEmployeePayrollInSyncWithDB(id));
 				} catch (DatabaseException e) {
 					System.out.println(e.getMessage());
@@ -308,14 +314,14 @@ public class EmployeePayrollService {
 	 */
 	public boolean isEmployeePayrollInSyncWithDB(int id) throws DatabaseException {
 		EmployeePayrollData list = employeePayrollDBService.getEmployeeData(id);
-		return list.equals(getEmployeeData(id));
+		return list.equals(getEmployeePayrollData(id));
 	}
 
 	/**
 	 * @param name
 	 * @returns Employee Payroll Data Object with given employee name
 	 */
-	private EmployeePayrollData getEmployeeData(int id) {
+	public EmployeePayrollData getEmployeePayrollData(int id) {
 		return employeePayrollDataList.stream()
 									  .filter(employeePayrollData -> employeePayrollData.getId() == id)
 									  .findFirst()

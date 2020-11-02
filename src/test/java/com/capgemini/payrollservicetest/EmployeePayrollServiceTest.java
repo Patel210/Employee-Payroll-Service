@@ -53,7 +53,7 @@ public class EmployeePayrollServiceTest {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
 		try {
-			employeePayrollService.updateEmployeeSalary(2, 3000000.0);
+			employeePayrollService.updateEmployeeSalary(2, 3000000.0, IOService.DB_IO);
 			boolean result = employeePayrollService.isEmployeePayrollInSyncWithDB(2);
 			assertTrue(result);
 		} catch (DatabaseException e) {}
