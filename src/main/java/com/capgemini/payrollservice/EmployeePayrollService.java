@@ -296,15 +296,18 @@ public class EmployeePayrollService {
 	/**
 	 * Remove employee with given id from the DB
 	 */
-	public void removeEmployeeFromDB(int id) {
-		try {
-			employeePayrollDBService.removeEmployee(id);
-			employeePayrollDataList = employeePayrollDataList.stream()
-															 .filter(employeePayrollData -> employeePayrollData.getId() != id)
-															 .collect(Collectors.toCollection(ArrayList::new));
-		} catch (DatabaseException e) {
-			System.out.println(e.getMessage());
-		}	
+	public void removeEmployee(int id, IOService ioService) {
+		if (ioService.equals(IOService.DB_IO)) {
+			try {
+				employeePayrollDBService.removeEmployee(id);
+			} catch (DatabaseException e) {
+				return;
+			}
+		}
+		employeePayrollDataList = employeePayrollDataList.stream()
+				 .filter(employeePayrollData -> employeePayrollData.getId() != id)
+				 .collect(Collectors.toCollection(ArrayList::new));
+
 	}
 	
 	/**

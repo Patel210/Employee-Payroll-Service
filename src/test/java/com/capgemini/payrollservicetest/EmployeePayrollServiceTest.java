@@ -124,7 +124,7 @@ public class EmployeePayrollServiceTest {
 	public void givenEmployee_WhenRemovedFromDB_ShouldReturnCorrectEmployeeCount() {
 		EmployeePayrollService employeePayrollService = new EmployeePayrollService();
 		employeePayrollService.readEmployeeData(IOService.DB_IO);
-		employeePayrollService.removeEmployeeFromDB(1);
+		employeePayrollService.removeEmployee(1, IOService.DB_IO);
 		assertEquals(3, employeePayrollService.employeeDataSize());
 	}
 	
