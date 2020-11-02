@@ -5,18 +5,18 @@ import java.util.Objects;
 
 public class EmployeePayrollData {
 
-	private int empId;
+	private int id;
 	private String companyName;
-	private String empName;
+	private String name;
 	private String address;
 	private double salary;
 	private LocalDate startDate;
 	private char gender;
 	private String[] departments;
 
-	public EmployeePayrollData(int empId, String empName, double salary) {
-		this.empName = empName;
-		this.empId = empId;
+	public EmployeePayrollData(int empId, String name, double salary) {
+		this.name = name;
+		this.id = empId;
 		this.salary = salary;
 	}
 
@@ -40,23 +40,23 @@ public class EmployeePayrollData {
 
 	@Override
 	public String toString() {
-		return "Id: " + empId + " Name: " + empName + " Salary: " + salary;
+		return "Id: " + id + " Name: " + name + " Salary: " + salary;
 	}
 
-	public String getEmpName() {
-		return empName;
+	public String getName() {
+		return name;
 	}
 
-	public void setEmpName(String empName) {
-		this.empName = empName;
+	public void setName(String name) {
+		this.name = name;
 	}
 
-	public int getEmpId() {
-		return empId;
+	public int getId() {
+		return id;
 	}
 
-	public void setEmpId(int empId) {
-		this.empId = empId;
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public double getSalary() {
@@ -89,7 +89,7 @@ public class EmployeePayrollData {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(empId, companyName, empName, address, salary, startDate, gender, departments);
+		return Objects.hash(id, companyName, name, address, salary, startDate, gender, departments);
 	}
 
 	@Override
@@ -99,6 +99,6 @@ public class EmployeePayrollData {
 		if (obj == null || getClass() != obj.getClass())
 			return false;
 		EmployeePayrollData other = (EmployeePayrollData) obj;
-		return empId == other.empId  && getCompanyName().equals(other.getCompanyName()) && empName.equals(other.empName) && Double.compare(salary, other.salary) == 0;
+		return id == other.id  && getCompanyName().equals(other.getCompanyName()) && name.equals(other.name) && Double.compare(salary, other.salary) == 0;
 	}
 }

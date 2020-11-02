@@ -22,9 +22,9 @@ public class EmployeePayrollService {
 	private ArrayList<EmployeePayrollData> employeePayrollDataList;
 	private EmployeePayrollDBService employeePayrollDBService;
 
-	public EmployeePayrollService(ArrayList<EmployeePayrollData> employeePayrollDataList) {
+	public EmployeePayrollService(List<EmployeePayrollData> employeePayrollDataList) {
 		employeePayrollDBService = EmployeePayrollDBService.createInstance();
-		this.employeePayrollDataList = employeePayrollDataList;
+		this.employeePayrollDataList = new ArrayList<EmployeePayrollData>(employeePayrollDataList);
 	}
 
 	public EmployeePayrollService() {
@@ -173,10 +173,10 @@ public class EmployeePayrollService {
 	public void addEmployeeToPayroll(List<EmployeePayrollData> employeeList) {
 		employeeList.forEach(employeePayrollData -> {
 			try {
-				System.out.println("Employee Being added: " + employeePayrollData.getEmpName());
-				addEmployeeToPayroll(employeePayrollData.getEmpName(), employeePayrollData.getAddress(), 
+				System.out.println("Employee Being added: " + employeePayrollData.getName());
+				addEmployeeToPayroll(employeePayrollData.getName(), employeePayrollData.getAddress(), 
 						employeePayrollData.getSalary(), employeePayrollData.getGender(), employeePayrollData.getStartDate(), employeePayrollData.getCompanyName(), employeePayrollData.getDepartments());
-				System.out.println("Employee added: " + employeePayrollData.getEmpName());
+				System.out.println("Employee added: " + employeePayrollData.getName());
 			} catch (DatabaseException e) {
 				System.out.println(e.getMessage());
 			}
@@ -193,7 +193,7 @@ public class EmployeePayrollService {
 			Runnable task = () -> {
 				System.out.println("Employee Being added: " + Thread.currentThread().getName());
 				try {
-					this.addEmployeeToPayroll(employeePayrollData.getEmpName(), employeePayrollData.getAddress(), 
+					this.addEmployeeToPayroll(employeePayrollData.getName(), employeePayrollData.getAddress(), 
 							employeePayrollData.getSalary(), employeePayrollData.getGender(), employeePayrollData.getStartDate(),
 							employeePayrollData.getCompanyName(), employeePayrollData.getDepartments());
 				} catch (DatabaseException e) {
@@ -202,7 +202,7 @@ public class EmployeePayrollService {
 				employeeInsertionStatus.put(employeePayrollData.hashCode(), true);
 				System.out.println("Employee added: " + Thread.currentThread().getName());
 			};
-			Thread thread = new Thread(task, employeePayrollData.getEmpName());
+			Thread thread = new Thread(task, employeePayrollData.getName());
 			thread.start();
 		});
 		while (employeeInsertionStatus.containsValue(false)) {
@@ -211,6 +211,20 @@ public class EmployeePayrollService {
 			} catch (InterruptedException e) {
 				System.out.println(e.getMessage());
 			}
+		}
+	}
+	
+	public void addEmployeeToPayroll(EmployeePayrollData employeePayrollData, IOService ioService) {
+		if(ioService.equals(IOService.DB_IO)) {
+			try {
+				addEmployeeToPayroll(employeePayrollData.getName(), employeePayrollData.getAddress(), 
+						employeePayrollData.getSalary(), employeePayrollData.getGender(), employeePayrollData.getStartDate(), employeePayrollData.getCompanyName(), employeePayrollData.getDepartments());
+			} catch (DatabaseException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+		else {
+			employeePayrollDataList.add(employeePayrollData);
 		}
 	}
 
@@ -222,7 +236,7 @@ public class EmployeePayrollService {
 		EmployeePayrollData employeePayrollData = employeePayrollDBService.addEmployeePayrollToDB(name, address, salary, gender,
 																									startDate, companyName, departments);
 		employeePayrollDataList.add(employeePayrollData);
-		return employeePayrollData.getEmpId();
+		return employeePayrollData.getId();
 	}
 
 	/**
@@ -280,7 +294,7 @@ public class EmployeePayrollService {
 		try {
 			employeePayrollDBService.removeEmployee(id);
 			employeePayrollDataList = employeePayrollDataList.stream()
-															 .filter(employeePayrollData -> employeePayrollData.getEmpId() != id)
+															 .filter(employeePayrollData -> employeePayrollData.getId() != id)
 															 .collect(Collectors.toCollection(ArrayList::new));
 		} catch (DatabaseException e) {
 			System.out.println(e.getMessage());
@@ -303,7 +317,7 @@ public class EmployeePayrollService {
 	 */
 	private EmployeePayrollData getEmployeeData(int id) {
 		return employeePayrollDataList.stream()
-									  .filter(employeePayrollData -> employeePayrollData.getEmpId() == id)
+									  .filter(employeePayrollData -> employeePayrollData.getId() == id)
 									  .findFirst()
 									  .orElse(null);
 	}
@@ -312,6 +326,9 @@ public class EmployeePayrollService {
 	 * Counts the entries
 	 */
 	public long countEntries(IOService ioService) {
+		if(ioService.equals(IOService.REST_IO)) {
+			return employeeDataSize();
+		}
 		return new EmployeePayrollFileIOService().countEntries();
 	}
 
@@ -332,5 +349,4 @@ public class EmployeePayrollService {
 	public long employeeDataSize() {
 		return employeePayrollDataList.size();
 	}
-
 }
