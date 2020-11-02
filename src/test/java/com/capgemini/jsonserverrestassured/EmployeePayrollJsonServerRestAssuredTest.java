@@ -12,7 +12,6 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.capgemini.exceptions.DatabaseException;
 import com.capgemini.payrolldata.EmployeePayrollData;
 import com.capgemini.payrollservice.EmployeePayrollService;
 import com.capgemini.payrollservice.EmployeePayrollService.IOService;
@@ -141,5 +140,13 @@ public class EmployeePayrollJsonServerRestAssuredTest {
 		Response response = request.put("/employee-payroll/" + employeePayrollData.getId());
 		int statusCode = response.getStatusCode();
 		assertEquals(200, statusCode);
+	}
+	
+	@Test
+	public void givenEmployeePayrollDataInJsonServer_WhenRetrieved_ShouldMatchTheTotalCount() {
+		EmployeePayrollData[] arrayOfEmps = getEmployeeList();
+		EmployeePayrollService employeePayrollService = new EmployeePayrollService(Arrays.asList(arrayOfEmps));
+		long enteries = employeePayrollService.countEntries(IOService.REST_IO);
+		assertEquals(5, enteries);
 	}
 }
